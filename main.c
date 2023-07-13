@@ -88,6 +88,7 @@ typedef struct
 {
     HWND hWndDlg;
     int hide;
+    int top;
     RECT rWndDlg;
 } uhr;
 /** Global variables ********************************************************/
@@ -97,9 +98,8 @@ static COLORREF gBackgroundColor;
 static COLORREF gForegroundColor;
 static HICON    hBackIcon;
 static HWND     hMainWnd = 0;
-static int minimized = 0;
+//static int minimized = 0;
 static int show_rest = 1;
-static int hide = 1;
 static int blackwhite = 0;
 static char IniName[300] = "myWinUhr2.ini";
 
@@ -116,9 +116,9 @@ SYSTEMTIME RZ={   0, 0, 0, 0,0,0,0,0};
 char alarmgrund[100] = "";
 char *wota[]= {"So\0nntag","Mo\0ntag","Di\0enstag","Mi\0ttwoch","Do\0nnerstag","Fr\0eitag","Sa\0mstag"};
 
-uhr uhren[3]   = {{NULL,0,{0,0,0,0}},
-                  {NULL,0,{0,0,0,0}},
-                  {NULL,0,{0,0,0,0}}};
+uhr uhren[3]   = {{NULL,0,0,{0,0,0,0}},
+                  {NULL,0,0,{0,0,0,0}},
+                  {NULL,0,0,{0,0,0,0}}};
 
 //****************************************************************************
 //  Get Parameter
@@ -395,31 +395,16 @@ void AktOutput(HWND hwndDlg)
 
     CalcRestZeit(ST, EZ, &RZ);
 
-    if (minimized)
+    if (ST.wDay != tag)
     {
-        if (show_rest)
-        {
-            sprintf(hStr, "%02d:%02d:%02d .", RZ.wHour, RZ.wMinute, RZ.wSecond);
-            tag = -1;
-        }
-        //SendMessage(hwndDlg,  WM_SETTEXT, 0, (long int)hStr);
+        sprintf(hStr,"X %2s: %02d.%02d.%04d",wota[ST.wDayOfWeek], ST.wDay, ST.wMonth, ST.wYear);
+        //SendMessage(hwndDlg , WM_SETTEXT, 0, (long int) hStr);
         SendMessage(uhren[0].hWndDlg, WM_SETTEXT, 0, (long int)hStr);
+        hStr[0] = 'Y';
         SendMessage(uhren[1].hWndDlg, WM_SETTEXT, 0, (long int)hStr);
+        hStr[0] = 'Z';
         SendMessage(uhren[2].hWndDlg, WM_SETTEXT, 0, (long int)hStr);
-    }
-    else
-    {
-        if (ST.wDay != tag)
-        {
-            sprintf(hStr,"X %2s: %02d.%02d.%04d",wota[ST.wDayOfWeek], ST.wDay, ST.wMonth, ST.wYear);
-            //SendMessage(hwndDlg , WM_SETTEXT, 0, (long int) hStr);
-            SendMessage(uhren[0].hWndDlg, WM_SETTEXT, 0, (long int)hStr);
-            hStr[0] = 'Y';
-            SendMessage(uhren[1].hWndDlg, WM_SETTEXT, 0, (long int)hStr);
-            hStr[0] = 'Z';
-            SendMessage(uhren[2].hWndDlg, WM_SETTEXT, 0, (long int)hStr);
-            tag = ST.wDay;
-        }
+        tag = ST.wDay;
     }
 
     if (ez != (((EZ.wHour<<6)+EZ.wMinute)<<6)+EZ.wSecond)
@@ -795,7 +780,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             AppendMenu(hPopupMenu, MF_STRING            ,IDM_EDIT       , "&Eingabe Endzeit");
             AppendMenu(hPopupMenu, MF_STRING|MF_CHECKED ,IDM_RESTZEIT   , "&Restzeit bei Minimiert");
             AppendMenu(hPopupMenu, MF_SEPARATOR         ,0              , 0);
-            AppendMenu(hPopupMenu, MF_STRING            ,IDM_MINI       , "&Minimieren");
+            //AppendMenu(hPopupMenu, MF_STRING            ,IDM_MINI       , "&Minimieren");
             AppendMenu(hPopupMenu, MF_STRING            ,IDM_HIDEX      , "&Verstecken X");
             AppendMenu(hPopupMenu, MF_STRING            ,IDM_HIDEY      , "&Verstecken Y");
             AppendMenu(hPopupMenu, MF_STRING            ,IDM_HIDEZ      , "&Verstecken Z");
@@ -810,7 +795,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         AppendMenu(hSysMenu, MF_STRING              , IDM_EDIT      , "&Eingabe Endzeit");
         AppendMenu(hSysMenu, MF_STRING | MF_CHECKED , IDM_RESTZEIT  , "&Restzeit bei Minimiert");
         AppendMenu(hSysMenu, MF_SEPARATOR           , 0             , 0);
-        AppendMenu(hSysMenu, MF_STRING              , IDM_MINI      , "&Minimieren");
+        //AppendMenu(hSysMenu, MF_STRING              , IDM_MINI      , "&Minimieren");
         AppendMenu(hSysMenu, MF_STRING              , IDM_HIDE      , "&Verstecken");
 
         SetColors(hwndDlg, (HDC)wParam);
@@ -866,21 +851,9 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             return TRUE;
 
         case IDM_RESTORE:
-            minimized = 0;
+            //minimized = 0;
             ShowWindow(hwndDlg,SW_RESTORE);
             break;
-        case IDM_MINI:
-            minimized = 1;
-            SaveRect();
-            if (hide == 1)
-            {
-                ShowWindow(hwndDlg, SW_HIDE);
-            }
-            else
-            {
-                SendMessage(hwndDlg, WM_SYSCOMMAND, SC_MINIMIZE, 0);
-            }
-            return TRUE;
 
         case IDM_RESTZEIT:
             // hSysMenu = GetSystemMenu(hwndDlg, FALSE);
@@ -898,16 +871,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             return TRUE;
 
         case IDM_EDIT:
-            if (minimized == 0)
-            {
-                DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)DlgProcEdit);
-            }
-            else
-            {
-                DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), NULL, (DLGPROC)DlgProcEdit);
-            }
+            DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)DlgProcEdit);
             SaveRect();
             return TRUE;
+
         case IDM_HIDEX:
             {
                 uhren[0].hide = !uhren[0].hide;
@@ -948,27 +915,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     case WM_SYSCOMMAND:
         switch (wParam)
         {
-        case SC_MINIMIZE:
-            minimized = 1;
-            break;
-        case SC_MAXIMIZE:
         case SC_RESTORE:
-            minimized = 0;
             ShowWindow(hwndDlg,SW_RESTORE);
             break;
-        case IDM_MINI:
-            SaveRect();
-            minimized = 1;
-            SaveRect();
-            if (hide == 1)
-            {
-                ShowWindow(hwndDlg, SW_HIDE);
-            }
-            else
-            {
-                SendMessage(hwndDlg, WM_SYSCOMMAND, SC_MINIMIZE, 0);
-            }
-            return TRUE;
+
         case IDM_RESTZEIT:
             // hSysMenu = GetSystemMenu(hwndDlg, FALSE);
             show_rest = !show_rest;
@@ -986,14 +936,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             SendMessage(hwndDlg, WM_CLOSE, 0, 0);
             return TRUE;
         case IDM_EDIT:
-            if (minimized == 0)
-            {
-                DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)DlgProcEdit);
-            }
-            else
-            {
-                DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), NULL, (DLGPROC)DlgProcEdit);
-            }
+            DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)DlgProcEdit);
             return TRUE;
 
         case IDM_HIDE:
