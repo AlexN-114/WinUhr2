@@ -49,9 +49,9 @@ LIB = $(PellesCDir)\Lib\Win;$(PellesCDir)\Lib#
 !endif
 
 # 
-# Erzeuge myWinUhr2-32.exe.
+# Erzeuge WinUhr2-32.exe.
 # 
-myWinUhr2-32.exe: \
+WinUhr2-32.exe: \
 	output\main.obj \
 	output\main.res
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
