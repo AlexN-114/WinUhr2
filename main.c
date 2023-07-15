@@ -795,8 +795,16 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         AppendMenu(hSysMenu, MF_STRING              , IDM_EDIT      , "&Eingabe Endzeit");
         AppendMenu(hSysMenu, MF_STRING | MF_CHECKED , IDM_RESTZEIT  , "&Restzeit bei Minimiert");
         AppendMenu(hSysMenu, MF_SEPARATOR           , 0             , 0);
-        //AppendMenu(hSysMenu, MF_STRING              , IDM_MINI      , "&Minimieren");
+        AppendMenu(hSysMenu, MF_STRING              , IDM_TOP       , "&TopMost");
         AppendMenu(hSysMenu, MF_STRING              , IDM_HIDE      , "&Verstecken");
+
+        for(i=0;i<3;i++)
+        {
+            if (uhren[i].hWndDlg==hwndDlg)
+            {
+                if (uhren[i].top) {CheckMenuItem(hSysMenu, IDM_TOP, MF_CHECKED);}
+            }
+        }
 
         SetColors(hwndDlg, (HDC)wParam);
         SetBkfColor(gForegroundColor, gBackgroundColor, (HDC)wParam);
@@ -949,34 +957,19 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     ShowWindow(uhren[i].hWndDlg,!uhren[i].hide);
                 }
             }
-            break;
-        case IDM_HIDEX:
+            return TRUE;
+
+        case IDM_TOP:
+            for(i=0; i<3; i++)
             {
-                uhren[0].hide = !uhren[0].hide;
-                CheckMenuItem(hPopupMenu,IDM_HIDEX,uhren[0].hide?MF_CHECKED:MF_UNCHECKED);
-                ShowWindow(uhren[0].hWndDlg,/*uhren[0].hide?SW_SHOW:*/SW_SHOW);
+                if (hwndDlg == uhren[i].hWndDlg)
+                {
+                    uhren[i].top = !uhren[i].top;
+                    CheckMenuItem(hSysMenu,IDM_TOP,uhren[i].top?MF_CHECKED:MF_UNCHECKED);
+                    SetWindowPos(hwndDlg, uhren[i].top?HWND_TOPMOST:HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+                }
             }
             return TRUE;
-            break;
-
-        case IDM_HIDEY:
-            {
-                uhren[1].hide = !uhren[1].hide;
-                CheckMenuItem(hPopupMenu,IDM_HIDEY,uhren[1].hide?MF_CHECKED:MF_UNCHECKED);
-                ShowWindow(uhren[1].hWndDlg,/*uhren[1].hide?SW_SHOW:*/SW_SHOW);
-            }
-            return TRUE;
-            break;
-
-        case IDM_HIDEZ:
-            {
-                uhren[2].hide = !uhren[2].hide;
-                CheckMenuItem(hPopupMenu,IDM_HIDEZ,uhren[2].hide?MF_CHECKED:MF_UNCHECKED);
-                ShowWindow(uhren[2].hWndDlg,/*uhren[2].hide?SW_HIDE:*/SW_SHOW);
-            }
-            return TRUE;
-            break;
-
         }
         break;
 

@@ -33,6 +33,10 @@
 #define IDM_HIDEX       6007
 #define IDM_HIDEY       6008
 #define IDM_HIDEZ       6009
+#define IDM_TOP         6010
+#define IDM_TOPX        6011
+#define IDM_TOPY        6012
+#define IDM_TOPZ        6013
 
 #define IDD_ALARM_TEXT  7001
 
