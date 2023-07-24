@@ -4,9 +4,11 @@
 
 #define TIMER_UHR       100
 
-#define DLG_MAIN        1001
-#define DLG_EDIT        1002
-#define DLG_ALARM       1003
+#define DLG_MAIN_X      1001
+#define DLG_MAIN_Y      1002
+#define DLG_MAIN_Z      1003
+#define DLG_EDIT        1004
+#define DLG_ALARM       1005
 
 #define IDM_MENU        2001
 
@@ -14,6 +16,7 @@
 #define IDR_ICO_TRAY    10002
 #define IDR_ICO_TRAY2   10003
 #define IDR_ICO_TRAY3   10004
+#define IDR_ICO_TRAY4   10005
 
 #define IDD_UHRZEIT     4001
 #define IDD_RESTZEIT    4002
@@ -23,6 +26,7 @@
 #define IDD_15MIN       4006
 #define IDD_30MIN       4007
 #define IDD_EDIT        4008
+#define IDI_BCLOCK      4009
 
 #define IDM_EDIT        6001
 #define IDM_MINI        6002

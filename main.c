@@ -65,10 +65,13 @@
 #define Refresh(A) RedrawWindow(A,NULL,NULL,RDW_ERASE|RDW_INVALIDATE|/*RDW_ALLCHILDREN|*/RDW_UPDATENOW);
 
 #define BUF_SIZE            256
-#define ICONSIZE            40 // 16
-#define IMAGESIZE           38 // 14
+#define ICONSIZE            40
+#define IMAGESIZE           38
+#define BIGICONSIZE         96
+#define BIGIMAGESIZE        92
 #define STUNDE_COLOR        RGB(0,0,191)
 #define MINUTE_COLOR        RGB(0,191,0)
+#define SEKUNDE_COLOR       RGB(0,0,0)
 #define WECKER_COLOR        RGB(255,0,0)
 #define MASK_COLOR          RGB(255,255,255)
 #define GCL_HICON           (-14)
@@ -99,6 +102,7 @@ static HANDLE ghInstance;
 static COLORREF gBackgroundColor;
 static COLORREF gForegroundColor;
 static HICON hBackIcon;
+static HICON hBigIcon;
 //static HWND hMainWnd = 0;
 //static int minimized = 0;
 static int show_rest = 1;
@@ -222,6 +226,32 @@ static void ConvLinePoint(const int hmx, const int hmy, POINT *pt, int flag)
 }
 
 //****************************************************************************
+//  ConvBigLinePoint
+//****************************************************************************
+static void ConvBigLinePoint(const int hmx, const int hmy, POINT *pt, int flag)
+{
+    switch (flag)
+    {
+        case 0: /* 0 bis 14 */
+            pt->x = hmx;
+            pt->y = hmy;
+            break;
+        case 1: /* 15 bis 29 */
+            pt->x = BIGIMAGESIZE - hmy;
+            pt->y = hmx;
+            break;
+        case 2: /* 30 bis 44 */
+            pt->x = BIGIMAGESIZE - hmx;
+            pt->y = BIGIMAGESIZE - hmy;
+            break;
+        case 3: /* 45 bis 59 */
+            pt->x = hmy;
+            pt->y = BIGIMAGESIZE - hmx;
+            break;
+    }
+}
+
+//****************************************************************************
 //  CreateTimeIcon
 //****************************************************************************
 static HICON CreateTimeIcon(HWND hWnd)
@@ -239,21 +269,14 @@ static HICON CreateTimeIcon(HWND hWnd)
     int index, flag;
     static int gMinute = -1;
     static int gWStd = -1, gWMin = -1;
-#if 0
-    /* Tabelle für Stundenzeiger */
-    const static int hx[] = {7, 8, 9, 10, 11, 11, 12, 12};
-    const static int hy[] = {2, 2, 2, 3, 3, 4, 5, 6};
-    /* Tabelle für Minutenzeiger */
-    const static int mx[] = {7, 8, 9, 10, 10, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14};
-    const static int my[] = {0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 6};
-#else
+
     /* Tabelle für Stundenzeiger */
     const static int hy[] = { 4, 5, 6, 8, 10, 13, 16, 18,};
     const static int hx[] = { 22, 25, 27, 29, 31, 33, 34, 34,};
     /* Tabelle für Minutenzeiger */
     const static int my[] = { 0, 0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 13, 15, 17, 19,};
     const static int mx[] = { 21, 23, 25, 27, 28, 30, 32, 33, 34, 35, 36, 37, 38, 38, 38,};
-#endif
+
     /* Zeit ermitteln und auf Änderung prüfen */
     GetLocalTime(&systim);
     if (systim.wMinute == gMinute)
@@ -383,6 +406,197 @@ static HICON CreateTimeIcon(HWND hWnd)
 }
 
 //****************************************************************************
+//  CreateBigTimeIcon
+//****************************************************************************
+static HICON CreateBigTimeIcon(HWND hWnd)
+{
+    HDC hdc, mdc;
+    HIMAGELIST IconList, mIconList, tIconList;
+    HICON hIcon;
+    HBITMAP hBitmap;
+    HBITMAP hMaskBitmap;
+    HBITMAP hRetBmp;
+
+    POINT pt[2];
+    SYSTEMTIME systim;
+
+    int index, flag;
+    static int gSekunde = -1;
+    static int gWStd = -1, gWMin = -1;
+
+    /* Tabelle für Stundenzeiger */
+    const static int hy[] = { 11, 13, 16, 21, 26, 33, 39, 47,};
+    const static int hx[] = { 55, 62, 69, 74, 79, 83, 85, 86,};
+    /* Tabelle für Minutenzeiger */
+    const static int my[] = {  0,  1,  2,  4,  6,  9, 12, 16, 20, 24, 28, 33, 38, 43, 48,};
+    const static int mx[] = { 53, 58, 63, 68, 72, 76, 80, 84, 87, 90, 92, 94, 95, 96, 96,};
+
+    /* Zeit ermitteln und auf Änderung prüfen */
+    GetLocalTime(&systim);
+    if (systim.wSecond == gSekunde)
+    {
+        if ((gWStd == EZ.wHour) && (gWMin == EZ.wMinute))
+        {
+            return NULL;
+        }
+        else
+        {
+            gWStd = EZ.wHour;
+            gWMin = EZ.wMinute;
+        }
+    }
+    gSekunde = systim.wSecond;
+
+    // S T U N D E N - Z e i g e r
+    hdc = GetDC(hWnd);
+    mdc = CreateCompatibleDC(hdc);
+
+    /* Bitmap für Vordergrund erzeugen */
+    hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, STUNDE_COLOR);
+
+    /* Bitmap für Maske erzeugen */
+    hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hMaskBitmap, 0, BIGICONSIZE, MASK_COLOR);
+    ReleaseDC(hWnd, hdc);
+    hRetBmp = SelectObject(mdc, hMaskBitmap);
+
+    pt[0].x = pt[0].y = BIGIMAGESIZE / 2 + 3;
+    /* Stundenzeiger zeichnen */
+    index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
+    flag = index / 15;
+    index %= 15;
+    index = (((index * 10) / 2) + 5) / 10;
+    ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
+    SelectObject(mdc, CreatePen(PS_SOLID, 3, STUNDE_COLOR));
+    Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
+
+    /* Icon zusammen setzen */
+    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
+    ImageList_AddIcon(IconList, hBigIcon);
+
+    /* GDI  */
+    SelectObject(mdc, hRetBmp);
+    DeleteDC(mdc);
+
+    /* Zeit Icon zusammen setzen */
+    ImageList_Add(IconList, hBitmap, hMaskBitmap);
+    DeleteObject(hBitmap);
+    DeleteObject(hMaskBitmap);
+
+    // M I N U T E N - Z e i g e r
+
+    hdc = GetDC(hWnd);
+    mdc = CreateCompatibleDC(hdc);
+    /* Bitmap für Vordergrund erzeugen */
+    hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, MINUTE_COLOR);
+
+    /* Bitmap für Maske erzeugen */
+    hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hMaskBitmap, 0, BIGICONSIZE, MASK_COLOR);
+    ReleaseDC(hWnd, hdc);
+    hRetBmp = SelectObject(mdc, hMaskBitmap);
+
+    /* Minutenzeiger zeichnen */
+    index = systim.wMinute % 15;
+    flag = systim.wMinute / 15;
+    ConvBigLinePoint(mx[index], my[index], &pt[1], flag);
+    SelectObject(mdc, CreatePen(PS_SOLID, 2, MINUTE_COLOR));
+    Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
+
+    /* Zeit Icon zusammen setzen */
+    SelectObject(mdc, hRetBmp);
+    DeleteDC(mdc);
+    ImageList_Add(IconList, hBitmap, hMaskBitmap);
+    DeleteObject(hBitmap);
+    DeleteObject(hMaskBitmap);
+
+    // W E C K E R - Zeiger
+    hdc = GetDC(hWnd);
+    mdc = CreateCompatibleDC(hdc);
+
+    /* Bitmap für Vordergrund erzeugen */
+    hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, WECKER_COLOR);
+
+    /* Bitmap für Maske erzeugen */
+    hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hMaskBitmap, 0, BIGICONSIZE, MASK_COLOR);
+    ReleaseDC(hWnd, hdc);
+    hRetBmp = SelectObject(mdc, hMaskBitmap);
+
+    /* Stundenzeiger zeichnen */
+    index = ((EZ.wHour % 12) * 5) + (EZ.wMinute / 15);
+    flag = index / 15;
+    index %= 15;
+    index = (((index * 10) / 2) + 5) / 10;
+    ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
+    SelectObject(mdc, CreatePen(PS_SOLID, 2, WECKER_COLOR));
+    Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
+
+    /* Maske setzen */
+    FillBitmap(mdc, hMaskBitmap, BIGIMAGESIZE / 2, BIGIMAGESIZE / 2 + 1, MASK_COLOR);
+
+    /* Wecker Icon zusammen setzen */
+    SelectObject(mdc, hRetBmp);
+    DeleteDC(mdc);
+    ImageList_Add(IconList, hBitmap, hMaskBitmap);
+    DeleteObject(hBitmap);
+    DeleteObject(hMaskBitmap);
+
+    // "Mergen" der Icons
+    mIconList = ImageList_Merge(IconList, 0, IconList, 1, 0, 0);  // Originalicon + Stundenzeiger
+    tIconList = ImageList_Merge(mIconList, 0, IconList, 2, 0, 0);  // + Minutenzeiger
+    ImageList_Destroy(mIconList);
+    mIconList = ImageList_Merge(tIconList, 0, IconList, 3, 0, 0);  // Wecker
+    ImageList_Destroy(tIconList);
+
+    hIcon = ImageList_GetIcon(mIconList, 0, ILD_NORMAL);
+    ImageList_Destroy(mIconList);
+    ImageList_Destroy(IconList);
+
+    // S E K U N D E N - Z e i g e r
+    hdc = GetDC(hWnd);
+    mdc = CreateCompatibleDC(hdc);
+
+    /* Bitmap für Vordergrund erzeugen */
+    hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, SEKUNDE_COLOR);
+
+    /* Bitmap für Maske erzeugen */
+    hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
+    FillBitmap(mdc, hMaskBitmap, 0, BIGICONSIZE, MASK_COLOR);
+    ReleaseDC(hWnd, hdc);
+    hRetBmp = SelectObject(mdc, hMaskBitmap);
+
+    pt[0].x = pt[0].y = BIGIMAGESIZE / 2 + 1;
+    /* Sekundenzeiger zeichnen */
+    index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
+    flag = index / 15;
+    index %= 15;
+    index = (((index * 10) / 2) + 5) / 10;
+    ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
+    SelectObject(mdc, CreatePen(PS_SOLID, 1, SEKUNDE_COLOR));
+    Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
+
+    /* Icon zusammen setzen */
+    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
+    ImageList_AddIcon(IconList, hBigIcon);
+
+    /* GDI  */
+    SelectObject(mdc, hRetBmp);
+    DeleteDC(mdc);
+
+    /* Zeit Icon zusammen setzen */
+    ImageList_Add(IconList, hBitmap, hMaskBitmap);
+    DeleteObject(hBitmap);
+    DeleteObject(hMaskBitmap);
+
+    return hIcon;
+}
+
+//****************************************************************************
 // Setzen der Farben                                                        **
 //****************************************************************************
 void AktOutput(HWND hwndDlg)
@@ -427,11 +641,9 @@ void AktOutput(HWND hwndDlg)
     {
         if (AlarmDlg == 0)
         {
-            DialogBox(NULL, MAKEINTRESOURCE(DLG_ALARM), hwndDlg, (DLGPROC)
-            DlgProcAlarm);
+            DialogBox(NULL, MAKEINTRESOURCE(DLG_ALARM), hwndDlg, (DLGPROC)DlgProcAlarm);
         }
     }
-
 }
 
 /****************************************************************************
@@ -696,8 +908,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     wcx.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));
     wcx.lpszClassName = _T("WinUhrClass");
 
-    // Tray-Icon laden
+    // Tray-Icons laden
     hBackIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICO_TRAY3), IMAGE_ICON, ICONSIZE, ICONSIZE, 0);
+    hBigIcon  = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICO_TRAY4), IMAGE_ICON, BIGICONSIZE, BIGICONSIZE, 0);
 
     if (!RegisterClassEx(&wcx))
         return 0;
@@ -705,9 +918,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
         /* The user interface is a modal dialog box */
 
         //hWindow  = CreateWindow("myWinUhr2","WinUhr2",0,100,100,1,1,NULL,NULL,hInstance,NULL);
-    uhren[0].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)DlgProcMain);
-    uhren[1].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)DlgProcMain);
-    uhren[2].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)DlgProcMain);
+    uhren[0].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_X), NULL, (DLGPROC)DlgProcMain);
+    uhren[1].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_Y), NULL, (DLGPROC)DlgProcMain);
+    uhren[2].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_Z), NULL, (DLGPROC)DlgProcMain);
     //DialogBox(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)DlgProcMain);
 
     while (GetMessage(&Msg, NULL, 0, 0) > 0)
@@ -1013,8 +1226,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             EZ.wHour, EZ.wMinute, EZ.wSecond);
 
             // TrayIcon setzen
-        HICON hTempIcon;
+            HICON hTempIcon;
             hTempIcon = CreateTimeIcon(hwndDlg);
+            HICON hBTempIcon;
+            hBTempIcon = CreateBigTimeIcon(hwndDlg);
             if (NULL != hTempIcon)
             {
                 if (NULL != hIcon)
@@ -1033,9 +1248,9 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 SendDlgItemMessage(uhren[1].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SetClassLong(uhren[1].hWnd, GCL_HICON, (LONG)hIcon);
-                SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SendDlgItemMessage(uhren[2].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hIcon);
+                SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
+                SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
+                SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
             }
 
             // Tray aktuallisieren

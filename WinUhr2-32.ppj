@@ -73,7 +73,8 @@ output\main.res: \
 	main.ico \
 	tray.ico \
 	tray2.ico \
-	tray3.ico
+	tray3.ico \
+	tray4.ico
 	$(RC) $(RCFLAGS) "$!" -Fo"$@"
 
 .EXCLUDEDFILES:
