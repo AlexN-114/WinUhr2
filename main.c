@@ -42,6 +42,7 @@
 // 1.9.0.36 Uhren einzeln verstecken und wieder holen           aN 09.07.2023
 // 1.9.0.37 bei Alarm ein vierter Button Edit                   aN 10.07.2023
 // 1.9.0.38 Fenster auf TopMost schalten                        aN 22.07.2023
+// 2.0.0.39 Uhren differenzieren analog, digital, beides        aN 27.07.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -421,8 +422,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     SYSTEMTIME systim;
 
     int index, flag;
-    static int gSekunde = -1;
-    static int gWStd = -1, gWMin = -1;
+    static int gWStd = -1, gWMin = -1, gSekunde = -1;
 
     /* Tabelle für Stundenzeiger */
     const static int hy[] = { 11, 13, 16, 21, 26, 33, 39, 47,};
@@ -462,6 +462,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     hRetBmp = SelectObject(mdc, hMaskBitmap);
 
     pt[0].x = pt[0].y = BIGIMAGESIZE / 2 + 3;
+
     /* Stundenzeiger zeichnen */
     index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
     flag = index / 15;
@@ -552,10 +553,11 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     mIconList = ImageList_Merge(tIconList, 0, IconList, 3, 0, 0);  // Wecker
     ImageList_Destroy(tIconList);
 
-    hIcon = ImageList_GetIcon(mIconList, 0, ILD_NORMAL);
-    ImageList_Destroy(mIconList);
-    ImageList_Destroy(IconList);
+//    hIcon = ImageList_GetIcon(mIconList, 0, ILD_NORMAL);
+//    ImageList_Destroy(mIconList);
+//    ImageList_Destroy(IconList);
 
+#if 01
     // S E K U N D E N - Z e i g e r
     hdc = GetDC(hWnd);
     mdc = CreateCompatibleDC(hdc);
@@ -570,28 +572,36 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     ReleaseDC(hWnd, hdc);
     hRetBmp = SelectObject(mdc, hMaskBitmap);
 
-    pt[0].x = pt[0].y = BIGIMAGESIZE / 2 + 1;
     /* Sekundenzeiger zeichnen */
-    index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
-    flag = index / 15;
-    index %= 15;
-    index = (((index * 10) / 2) + 5) / 10;
-    ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
+    index = systim.wSecond % 15;
+    flag = systim.wSecond / 15;
+    ConvBigLinePoint(mx[index], my[index], &pt[1], flag);
     SelectObject(mdc, CreatePen(PS_SOLID, 1, SEKUNDE_COLOR));
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
 
-    /* Icon zusammen setzen */
-    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
-    ImageList_AddIcon(IconList, hBigIcon);
+    /* Maske setzen */
+    FillBitmap(mdc, hMaskBitmap, BIGIMAGESIZE / 2, BIGIMAGESIZE / 2 + 1, MASK_COLOR);
 
-    /* GDI  */
+    /* Sekunden Icon zusammen setzen */
     SelectObject(mdc, hRetBmp);
     DeleteDC(mdc);
-
-    /* Zeit Icon zusammen setzen */
     ImageList_Add(IconList, hBitmap, hMaskBitmap);
     DeleteObject(hBitmap);
     DeleteObject(hMaskBitmap);
+
+    // "Mergen" der Icons
+/*    mIconList = ImageList_Merge(IconList, 0, IconList, 1, 0, 0);  // Originalicon + Stundenzeiger
+    tIconList = ImageList_Merge(mIconList, 0, IconList, 2, 0, 0);  // + Minutenzeiger
+    ImageList_Destroy(mIconList);
+    mIconList = ImageList_Merge(tIconList, 0, IconList, 3, 0, 0);  // + Wecker
+    ImageList_Destroy(tIconList);
+*/    tIconList = ImageList_Merge(mIconList, 0, IconList, 4, 0, 0);  // + Minutenzeiger
+    ImageList_Destroy(mIconList);
+
+    hIcon = ImageList_GetIcon(tIconList, 0, ILD_NORMAL);
+    ImageList_Destroy(tIconList);
+    ImageList_Destroy(IconList);
+#endif
 
     return hIcon;
 }
@@ -615,12 +625,12 @@ void AktOutput(HWND hwndDlg)
 
     if (ST.wDay != tag)
     {
-        sprintf(hStr, "X %2s: %02d.%02d.%04d", wota[ST.wDayOfWeek], ST.wDay, ST.wMonth, ST.wYear);
+        sprintf(hStr, "%2s: %02d.%02d.%04d", wota[ST.wDayOfWeek], ST.wDay, ST.wMonth, ST.wYear);
         //SendMessage(hwndDlg , WM_SETTEXT, 0, (long int) hStr);
         SendMessage(uhren[0].hWnd, WM_SETTEXT, 0, (long int)hStr);
-        hStr[0] = 'Y';
+        //hStr[0] = 'Y';
         SendMessage(uhren[1].hWnd, WM_SETTEXT, 0, (long int)hStr);
-        hStr[0] = 'Z';
+        //hStr[0] = 'Z';
         SendMessage(uhren[2].hWnd, WM_SETTEXT, 0, (long int)hStr);
         tag = ST.wDay;
     }
@@ -1226,10 +1236,17 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             EZ.wHour, EZ.wMinute, EZ.wSecond);
 
             // TrayIcon setzen
-            HICON hTempIcon;
-            hTempIcon = CreateTimeIcon(hwndDlg);
             HICON hBTempIcon;
             hBTempIcon = CreateBigTimeIcon(hwndDlg);
+            if (NULL != hBTempIcon)
+            {
+                SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
+                SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
+                SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
+            }
+
+            HICON hTempIcon;
+            hTempIcon = CreateTimeIcon(hwndDlg);
             if (NULL != hTempIcon)
             {
                 if (NULL != hIcon)
@@ -1248,9 +1265,6 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 SendDlgItemMessage(uhren[1].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SetClassLong(uhren[1].hWnd, GCL_HICON, (LONG)hIcon);
-                SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
-                SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
-                SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
             }
 
             // Tray aktuallisieren
@@ -1322,16 +1336,9 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             nid.uID = IDR_ICO_TRAY3;
             nid.uFlags = NIF_ICON + NIF_MESSAGE + NIF_TIP;
             Shell_NotifyIcon(NIM_DELETE, &nid);
-            for (int i = 0;i < 3;i++)
-            {
-                if (uhren[i].hWnd == hwndDlg)
-                {
-                    uhren[i].hWnd = NULL;
-                    break;
-                }
-            }
-            ;
+            uhren[selUhr].hWnd = NULL;
             EndDialog(hwndDlg, 0);
+            exit(0);
             return TRUE;
     }
 
