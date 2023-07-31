@@ -3,6 +3,7 @@
 #define WM_SHELLNOTIFY  WM_USER+5
 
 #define TIMER_UHR       100
+#define TIMER_UHRA      101
 
 #define DLG_MAIN_X      1001
 #define DLG_MAIN_Y      1002
