@@ -470,7 +470,8 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     ReleaseDC(hWnd, hdc);
     hRetBmp = SelectObject(mdc, hMaskBitmap);
 
-    pt[0].x = pt[0].y = BIGIMAGESIZE / 2 + 2;
+
+    pt[0].x = pt[0].y = BIGIMAGESIZE / 2;
 
     /* Stundenzeiger zeichnen */
     index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
@@ -478,6 +479,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index %= 15;
     index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
+
     hPen = CreatePen(PS_SOLID, 3, STUNDE_COLOR);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
@@ -514,6 +516,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index = systim.wMinute % 15;
     flag = systim.wMinute / 15;
     ConvBigLinePoint(mx[index], my[index], &pt[1], flag);
+
     hPen = CreatePen(PS_SOLID, 2, MINUTE_COLOR);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
@@ -609,8 +612,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     DeleteObject(hMaskBitmap);
 
     // "Mergen" der Icons
-    tIconList = ImageList_Merge(mIconList, 0, IconList, 4, 0, 0);  // + Sekundenzeiger
-    ImageList_Destroy(mIconList);
+    tIconList = ImageList_Merge(mIconList, 0, IconList, 4, 0, 0);  // + Minutenzeiger
 
     hIcon = ImageList_GetIcon(tIconList, 0, ILD_NORMAL);
     ImageList_Destroy(tIconList);
@@ -1091,8 +1093,6 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 else if (WM_LBUTTONDBLCLK == lParam)
                 {
                     // Restore Window
-                    KillTimer(hwndDlg,TIMER_UHR);
-                    SetTimer(hwndDlg, TIMER_UHR, 250, NULL);
                     SendMessage(hwndDlg, WM_COMMAND, IDM_RESTORE, 0);
                 }
             }
@@ -1111,9 +1111,6 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 case IDM_RESTORE:
                     //minimized = 0;
-                    KillTimer(hwndDlg,TIMER_UHR);
-                    SetTimer(hwndDlg, TIMER_UHR, 250, NULL);
-
                     ShowWindow(hwndDlg, SW_RESTORE);
                     break;
 
@@ -1205,8 +1202,6 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             switch (wParam)
             {
                 case SC_RESTORE:
-                    KillTimer(hwndDlg,TIMER_UHR);
-                    SetTimer(hwndDlg, TIMER_UHR, 250, NULL);
                     ShowWindow(hwndDlg, SW_RESTORE);
                     break;
 
