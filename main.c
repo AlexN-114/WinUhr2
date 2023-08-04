@@ -461,7 +461,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     ReleaseDC(hWnd, hdc);
     hRetBmp = SelectObject(mdc, hMaskBitmap);
 
-    pt[0].x = pt[0].y = BIGIMAGESIZE / 2 + 3;
+    pt[0].x = pt[0].y = BIGIMAGESIZE / 2;
 
     /* Stundenzeiger zeichnen */
     index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
