@@ -593,9 +593,9 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index = systim.wSecond % 15;
     flag = systim.wSecond / 15;
     ConvBigLinePoint(mx[index], my[index], &pt[1], flag);
-    char hStr[200];
-    sprintf(hStr,"index:%2d flag:%d mx/y:%2d,%2d pt:%2d,%2d\n",index,flag,mx[index], my[index],pt[1].x,pt[1].y);
-    OutputDebugString(hStr);
+    //char hStr[200];
+    //sprintf(hStr,"index:%2d flag:%d mx/y:%2d,%2d pt:%2d,%2d\n",index,flag,mx[index], my[index],pt[1].x,pt[1].y);
+    //OutputDebugString(hStr);
     hPen = CreatePen(PS_SOLID, 1, SEKUNDE_COLOR);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
@@ -1255,9 +1255,9 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     hBTempIcon = CreateBigTimeIcon(hwndDlg);
                     if (NULL != hBTempIcon)
                     {
-                        SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
+                        //SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
                         SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
-                        SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
+                        //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
                     }
                 }
                 return TRUE;
@@ -1290,6 +1290,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 SendDlgItemMessage(uhren[1].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SetClassLong(uhren[1].hWnd, GCL_HICON, (LONG)hIcon);
+                SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
             }
 
             // Tray aktuallisieren
@@ -1298,8 +1299,8 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             if (!done)
             {
                 if ((uhren[0].hWnd != 0) &&
-                (uhren[1].hWnd != 0) &&
-                (uhren[2].hWnd != 0))
+                    (uhren[1].hWnd != 0) &&
+                    (uhren[2].hWnd != 0))
                 {
                     RECT hr;
                     for (int i = 0;i < 3; i++)
@@ -1308,6 +1309,9 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                         hr.right -= hr.left;
                         hr.bottom -= hr.top;
                         MoveWindow(uhren[i].hWnd, uhren[i].rWndDlg.left, uhren[i].rWndDlg.top, hr.right, hr.bottom, TRUE);
+                        char hStr[200];
+                        sprintf(hStr,"index:%2d pos x/y:%2d,%2d\n",i,uhren[i].rWndDlg.left,uhren[i].rWndDlg.top);
+                        OutputDebugString(hStr);
                     }
                 }
                 done = !done;
@@ -1340,14 +1344,28 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     ShowWindow(uhren[i].hWnd, !uhren[i].hide);
                 }
             }
+            return TRUE;
             break;
 
+        case WM_MOVE:
         case WM_WINDOWPOSCHANGED:
+            for(int i=0; i<3 ;i++)
+            {
+                if (uhren[i].hide == 0)
+                {
+                    if (done)
+                    {
+                        GetWindowRect(uhren[i].hWnd, &uhren[i].rWndDlg);
+                    }
+                }
+            }
             SaveRect();
+            return TRUE;
             break;
 
         case WM_CLOSE:
             KillTimer(hwndDlg, TIMER_UHR);
+            KillTimer(hwndDlg, TIMER_UHRA);
             SaveRect();
             nid.cbSize = sizeof(NOTIFYICONDATA);
             nid.hWnd = hwndDlg;
