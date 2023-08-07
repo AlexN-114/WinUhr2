@@ -44,6 +44,7 @@
 // 1.9.0.38 Fenster auf TopMost schalten                        aN 22.07.2023
 // 2.0.0.39 Uhren differenzieren analog, digital, beides        aN 27.07.2023
 // 2.0.0.40 HPEN nach Gebrauch wieder löschen                   aN 31.07.2023
+// 2.0.0.41 Parameter S(panne) auswerten                        aN 07.08.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -88,6 +89,7 @@ void SetColors(HWND hwndCtl, HDC wParam);
 HBRUSH SetBkfColor(COLORREF TxtColr, COLORREF BkColr, HDC hdc);
 void SaveRect(void);
 void CalcRestZeit(SYSTEMTIME j, SYSTEMTIME e, SYSTEMTIME *r);
+void AddTime(int diff);
 
 /** Typen *******************************************************************/
 typedef struct
@@ -115,6 +117,7 @@ static char IniName[300] = "WinUhr2.ini";
 static HMENU hPopupMenu = NULL;
 static NOTIFYICONDATA nid = {0};
 static HICON hIcon;
+static HICON hBIcon;
 
 int AlarmDlg = 0;  // Flag ob der Alarmdialog eingeschaltet ist
 
@@ -136,6 +139,7 @@ void GetParams(char *szCmdline)
     int i = 0;
     char *cp;
     char hStr[200];
+    SYSTEMTIME hZeit;
 
     if (szCmdline == NULL)
         return;
@@ -172,9 +176,43 @@ void GetParams(char *szCmdline)
 
             case 'S': // Spanne
             case 's':
+            {
+                int p,z1,z2;
+                i++;
+                if (szCmdline[i] == '=')
+                    i++;
+                if (szCmdline[i] == ':')
+                    i++;
+                cp = hStr;
+                while ((szCmdline[i] != ' ') && (szCmdline[i] != '\0'))
+                    *(cp++) = szCmdline[i++];
+                *cp = 0;
+                p = sscanf(hStr, "%d:%d", &z1, &z2);
+                switch(p)
+                {
+                    case 2:
+                        p = z1*60+z2;
+                        break;
+                    case 1:
+                        p = z1;
+                        break;
+                    default:
+                        p = 0;
+                        break;
+                }
+                GetLocalTime(&EZ);
+                EZ.wSecond = 0;
+                AddTime(p);
+                break;
+            }
+
+            case '/': // Spanne
+            case '-':
+                //i++;
                 break;
 
             default:
+                //i++;
                 break;
         }
         i++;
@@ -613,6 +651,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
 
     // "Mergen" der Icons
     tIconList = ImageList_Merge(mIconList, 0, IconList, 4, 0, 0);  // + Minutenzeiger
+    ImageList_Destroy(mIconList);
 
     hIcon = ImageList_GetIcon(tIconList, 0, ILD_NORMAL);
     ImageList_Destroy(tIconList);
@@ -788,15 +827,15 @@ void SaveRect(void)
         sprintf(hStr, "%s\n", alarmgrund);
         fwrite(hStr, 1, strlen(hStr), f);
 
-        sprintf(hStr, "%d,%d,%d,%d\n",
+        sprintf(hStr, "%ld,%ld,%ld,%ld\n",
         uhren[0].rWndDlg.left, uhren[0].rWndDlg.top,
         uhren[0].rWndDlg.right, uhren[0].rWndDlg.bottom);
         fwrite(hStr, 1, strlen(hStr), f);
-        sprintf(hStr, "%d,%d,%d,%d\n",
+        sprintf(hStr, "%ld,%ld,%ld,%ld\n",
         uhren[1].rWndDlg.left, uhren[1].rWndDlg.top,
         uhren[1].rWndDlg.right, uhren[1].rWndDlg.bottom);
         fwrite(hStr, 1, strlen(hStr), f);
-        sprintf(hStr, "%d,%d,%d,%d\n",
+        sprintf(hStr, "%ld,%ld,%ld,%ld\n",
         uhren[2].rWndDlg.left, uhren[2].rWndDlg.top,
         uhren[2].rWndDlg.right, uhren[2].rWndDlg.bottom);
         fwrite(hStr, 1, strlen(hStr), f);
@@ -1248,15 +1287,16 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 if (uhren[2].hide == 0)
                 {
                     static HICON hBTempIcon = NULL;
-                    if (NULL != hBTempIcon)
-                    {
-                        //DestroyIcon(hBTempIcon);
-                    }
                     hBTempIcon = CreateBigTimeIcon(hwndDlg);
                     if (NULL != hBTempIcon)
                     {
+                        if (NULL != hBIcon)
+                        {
+                            DestroyIcon(hBIcon);
+                        }
+                        hBIcon = hBTempIcon;
                         //SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
-                        SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
+                        SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBIcon, (LPARAM)0);
                         //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
                     }
                 }
@@ -1273,7 +1313,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
             // Icons setzen
 
-            HICON hTempIcon;
+            static HICON hTempIcon;
             hTempIcon = CreateTimeIcon(hwndDlg);
             if (NULL != hTempIcon)
             {
@@ -1303,14 +1343,14 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     (uhren[2].hWnd != 0))
                 {
                     RECT hr;
-                    for (int i = 0;i < 3; i++)
+                    for (i = 0;i < 3; i++)
                     {
                         GetWindowRect(uhren[i].hWnd, &hr);
                         hr.right -= hr.left;
                         hr.bottom -= hr.top;
                         MoveWindow(uhren[i].hWnd, uhren[i].rWndDlg.left, uhren[i].rWndDlg.top, hr.right, hr.bottom, TRUE);
                         char hStr[200];
-                        sprintf(hStr,"index:%2d pos x/y:%2d,%2d\n",i,uhren[i].rWndDlg.left,uhren[i].rWndDlg.top);
+                        sprintf(hStr,"index:%2d pos x/y:%2ld,%2ld\n",i,uhren[i].rWndDlg.left,uhren[i].rWndDlg.top);
                         OutputDebugString(hStr);
                     }
                 }
@@ -1434,6 +1474,7 @@ static LRESULT CALLBACK DlgProcEdit(HWND hwndEDlg, UINT uMsg, WPARAM wParam, LPA
     return FALSE;
 }
 
+// zur Endzeit EZ 'diff'-Minuten addieren
 void AddTime(int diff)
 {
     EZ.wMinute += (short)diff;
