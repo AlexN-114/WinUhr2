@@ -139,7 +139,6 @@ void GetParams(char *szCmdline)
     int i = 0;
     char *cp;
     char hStr[200];
-    SYSTEMTIME hZeit;
 
     if (szCmdline == NULL)
         return;
@@ -472,8 +471,8 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     static int gWStd = -1, gWMin = -1, gSekunde = -1;
 
     // Tabelle für Stundenzeiger
-    const static int hy[] = { 10, 11, 13, 16, 21, 26, 33, 39,};
-    const static int hx[] = { 48, 55, 62, 69, 74, 79, 83, 85,};
+    const static int hy[] = { 10, 10, 11, 12, 13, 15, 17, 20, 23, 26, 29, 33, 36, 40, 44,};
+    const static int hx[] = { 48, 52, 56, 60, 63, 67, 70, 73, 76, 79, 81, 83, 84, 85, 86,};
     // Tabelle für Minutenzeiger
     const static int my[] = {  0,  0,  1,  2,  4,  6,  9, 12, 16, 20, 24, 28, 33, 38, 43,};
     const static int mx[] = { 48, 53, 58, 63, 68, 72, 76, 80, 84, 87, 90, 92, 94, 95, 96,};
@@ -515,7 +514,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index = ((systim.wHour % 12) * 5) + (systim.wMinute / 15);
     flag = index / 15;
     index %= 15;
-    index = (((index * 10) / 2) + 5) / 10;
+    //index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
 
     hPen = CreatePen(PS_SOLID, 3, STUNDE_COLOR);
@@ -585,7 +584,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index = ((EZ.wHour % 12) * 5) + (EZ.wMinute / 15);
     flag = index / 15;
     index %= 15;
-    index = (((index * 10) / 2) + 5) / 10;
+    //index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
     hPen = CreatePen(PS_SOLID, 4, WECKER_COLOR);
     SelectObject(mdc, hPen);
@@ -985,6 +984,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     uhren[0].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_X), NULL, (DLGPROC)DlgProcMain);
     uhren[1].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_Y), NULL, (DLGPROC)DlgProcMain);
     uhren[2].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_Z), NULL, (DLGPROC)DlgProcMain);
+	Refresh(uhren[0].hWnd);
+	Refresh(uhren[1].hWnd);
+	Refresh(uhren[2].hWnd);
     //DialogBox(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)DlgProcMain);
 
     while (GetMessage(&Msg, NULL, 0, 0) > 0)
