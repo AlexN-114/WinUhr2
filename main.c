@@ -679,12 +679,9 @@ void AktOutput(HWND hwndDlg)
     if (ST.wDay != tag)
     {
         sprintf(hStr, "%2s: %02d.%02d.%04d", wota[ST.wDayOfWeek], ST.wDay, ST.wMonth, ST.wYear);
-        //SendMessage(hwndDlg , WM_SETTEXT, 0, (long int) hStr);
-        SendMessage(uhren[0].hWnd, WM_SETTEXT, 0, (long int)hStr);
-        //hStr[0] = 'Y';
-        SendMessage(uhren[1].hWnd, WM_SETTEXT, 0, (long int)hStr);
-        //hStr[0] = 'Z';
-        SendMessage(uhren[2].hWnd, WM_SETTEXT, 0, (long int)hStr);
+        SendMessage(uhren[0].hWnd, WM_SETTEXT, 0, (size_t)hStr);
+        SendMessage(uhren[1].hWnd, WM_SETTEXT, 0, (size_t)hStr);
+        SendMessage(uhren[2].hWnd, WM_SETTEXT, 0, (size_t)hStr);
         tag = ST.wDay;
     }
 
