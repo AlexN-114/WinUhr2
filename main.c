@@ -45,6 +45,8 @@
 // 2.0.0.39 Uhren differenzieren analog, digital, beides        aN 27.07.2023
 // 2.0.0.40 HPEN nach Gebrauch wieder löschen                   aN 31.07.2023
 // 2.0.0.41 Parameter S(panne) auswerten                        aN 07.08.2023
+// 2.0.0.42 Edit-Dialog überarbeitet                            aN 09.08.2023
+// 2.0.0.43 Restzeit-Berechnung neu                             aN 14.08.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -120,6 +122,7 @@ static HICON hIcon;
 static HICON hBIcon;
 
 int AlarmDlg = 0;  // Flag ob der Alarmdialog eingeschaltet ist
+int erreicht = 0;  // Flag für Zeit erreicht
 
 SYSTEMTIME DZ = {2012, 0, 0,12,0,0,0,0};
 SYSTEMTIME EZ = {2012, 3,14,17,0,0,0,0};
@@ -310,12 +313,12 @@ static HICON CreateTimeIcon(HWND hWnd)
     static int gMinute = -1;
     static int gWStd = -1, gWMin = -1;
 
-    /* Tabelle für Stundenzeiger */
-    const static int hy[] = { 4, 5, 6, 8, 10, 13, 16, 18,};
-    const static int hx[] = { 22, 25, 27, 29, 31, 33, 34, 34,};
-    /* Tabelle für Minutenzeiger */
-    const static int my[] = { 0, 0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 13, 15, 17, 19,};
-    const static int mx[] = { 21, 23, 25, 27, 28, 30, 32, 33, 34, 35, 36, 37, 38, 38, 38,};
+    // Tabelle für Stundenzeiger
+    const static int hy[] = {  4,  4,  5,  7,  8, 11, 13, 16,};
+    const static int hx[] = { 20, 23, 26, 29, 31, 33, 35, 36,};
+    // Tabelle für Minutenzeiger
+    const static int my[] = {  0,  0,  0,  1,  2,  3,  4,  5,  7,  8, 10, 12, 14, 16, 18,};
+    const static int mx[] = { 20, 22, 24, 26, 28, 30, 32, 33, 35, 36, 37, 38, 39, 40, 40,};
 
     /* Zeit ermitteln und auf Änderung prüfen */
     GetLocalTime(&systim);
@@ -742,7 +745,7 @@ void SetColors(HWND hwndCtl, HDC wParam)
     static COLORREF old_back = 0;
     int id;
     int delta;
-    int abstand;
+    int abstand = 24*60;
     int tx_r,tx_g,tx_b;
     int bg_r,bg_g,bg_b;
 
@@ -755,10 +758,10 @@ void SetColors(HWND hwndCtl, HDC wParam)
         if (0 == abstand)
             abstand = 60;  // Korrektur bei Abstand 0
 
-        if (RZ.wDay > 0)
+        if (erreicht)
         {
             // grün
-            bg_r = (240 * (abstand - delta)) / abstand;
+            bg_r = (127 * (abstand - delta)) / abstand;
             bg_g = ( 31 * (abstand - delta)) / abstand + 224;
             bg_b = 0;
         }
@@ -766,8 +769,8 @@ void SetColors(HWND hwndCtl, HDC wParam)
         {
             // rot
             bg_r = ( 31 * (abstand - delta)) / abstand + 224;
-            bg_g = (240 * (abstand - delta)) / abstand;
-            bg_b = 0;
+            bg_g = 0;
+            bg_b = (127 * (abstand - delta)) / abstand;
         }
         gBackgroundColor = RGB(bg_r, bg_g, bg_b);
 
@@ -852,22 +855,34 @@ void CalcRestZeit(SYSTEMTIME J, SYSTEMTIME E, SYSTEMTIME *rz)
     iJ = (J.wHour * 60 + J.wMinute) * 60 + J.wSecond;
     iE = (E.wHour * 60 + E.wMinute) * 60 + E.wSecond;
 
-    if (iJ > iE)
+    if(erreicht)
     {
-        iR = iJ - iE;
-        rz->wDay = 1;
+        if(iJ > iE)
+        {
+            iR = iJ - iE;
+        }
+        else
+        {
+            iR = iJ + 24 * 3600 - iE;
+        }
     }
     else
     {
-        iR = iE - iJ;
-        rz->wDay = 0;
+        // nicht erreicht
+        if(iJ > iE)
+        {
+            iR = iE + 24 * 3600 - iJ;
+        }
+        else
+        {
+            iR = iE - iJ;
+        }
     }
 
     rz->wSecond = iR % 60;
     rz->wMinute = (iR / 60) % 60;
-    rz->wHour = (unsigned short)(iR / 3600);
+    rz->wHour = (unsigned short)(iR / 3600) % 24;
 }
-
 /****************************************************************************
  *                                                                          *
  * Function: WinMain                                                        *
@@ -1305,10 +1320,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             // Tray-Tip aktualisieren
             GetLocalTime(&Jetzt);
             sprintf(nid.szTip, "%2s: %02d.%02d.%04d\nJetzt: %02d:%02d:%02d\nRest: %02d:%02d:%02d\nEnde: %02d:%02d:%02d",
-            wota[Jetzt.wDayOfWeek], Jetzt.wDay, Jetzt.wMonth, Jetzt.wYear /*%100*/ ,
-            Jetzt.wHour, Jetzt.wMinute, Jetzt.wSecond,
-            RZ.wHour, RZ.wMinute, RZ.wSecond,
-            EZ.wHour, EZ.wMinute, EZ.wSecond);
+                    wota[Jetzt.wDayOfWeek], Jetzt.wDay, Jetzt.wMonth, Jetzt.wYear /*%100*/ ,
+                    Jetzt.wHour, Jetzt.wMinute, Jetzt.wSecond,
+                    RZ.wHour, RZ.wMinute, RZ.wSecond,
+                    EZ.wHour, EZ.wMinute, EZ.wSecond);
 
             // Icons setzen
 
@@ -1325,10 +1340,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 SendDlgItemMessage(uhren[0].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SendDlgItemMessage(uhren[0].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[0].hWnd, GCL_HICON, (LONG)hIcon);
+                SetClassLong(uhren[0].hWnd, GCL_HICON, (size_t)hIcon);
                 SendDlgItemMessage(uhren[1].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[1].hWnd, GCL_HICON, (LONG)hIcon);
+                //SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
+                SetClassLong(uhren[1].hWnd, GCL_HICON, (size_t)hIcon);
                 SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
             }
 
@@ -1368,8 +1383,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             break;
 
         case WM_LBUTTONDBLCLK:
-            DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)
-            DlgProcEdit);
+            DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)DlgProcEdit);
             break;
 
         case WM_RBUTTONUP:
@@ -1423,6 +1437,8 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 static LRESULT CALLBACK DlgProcEdit(HWND hwndEDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     char hStr[100];
+    int items;
+    int h,m,s;
 
     switch (uMsg)
     {
@@ -1433,9 +1449,9 @@ static LRESULT CALLBACK DlgProcEdit(HWND hwndEDlg, UINT uMsg, WPARAM wParam, LPA
             return TRUE;
 
         case WM_SIZE:
-        /*
-         * TODO: Add code to process resizing, when needed.
-         */
+            /*
+             * TODO: Add code to process resizing, when needed.
+             */
             return TRUE;
 
         case WM_COMMAND:
@@ -1443,12 +1459,33 @@ static LRESULT CALLBACK DlgProcEdit(HWND hwndEDlg, UINT uMsg, WPARAM wParam, LPA
             {
                 case IDOK:
                     GetDlgItemText(hwndEDlg, IDD_EDIT_ZEIT, hStr, 99);
-                    sscanf(hStr, "%hu:%hu:%hu", &EZ.wHour, &EZ.wMinute, &EZ.wSecond);
+                    items=sscanf(hStr, "%u:%u:%u", &h, &m, &s);
+                    // eine Einfache Syntaxprüfung der Eingabe  ** aN 09.08.2023
+                    switch(items)
+                    {
+                        case 3:
+                            EZ.wHour   = h % 24;
+                            EZ.wMinute = m % 60;
+                            EZ.wSecond = s % 60;
+                            erreicht = 0;
+                            break;
+                        case 2:
+                            EZ.wHour   = h % 24;
+                            EZ.wMinute = m % 60;
+                            EZ.wSecond = 0;
+                            erreicht = 0;
+                            break;
+                        case 1:
+                            GetLocalTime(&EZ);
+                            EZ.wSecond = 0;
+                            AddTime(h);
+                            erreicht = 0;
+                            break;
+                        default:
+                            break;
+                    }
 
-                    // eine Einfache Syntaxprüfung der Eingabe  ** aN 10.04.2007
-                    EZ.wHour %= 24;
-                    EZ.wMinute %= 60;
-                    EZ.wSecond %= 60;
+                    
 
                     GetDlgItemText(hwndEDlg, IDD_EDIT_GRUND, alarmgrund, 99);
 
@@ -1479,13 +1516,14 @@ void AddTime(int diff)
     EZ.wMinute += (short)diff;
     if (EZ.wMinute >= 60)
     {
-        EZ.wMinute -= 60;
-        EZ.wHour++;
+        EZ.wHour += EZ.wMinute/60;
+        EZ.wMinute %= 60;
         if (EZ.wHour >= 24)
         {
             EZ.wHour %= 24;
         }
     }
+    erreicht = 0;
 }
 
 static LRESULT CALLBACK DlgProcAlarm(HWND hwndADlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -1496,6 +1534,7 @@ static LRESULT CALLBACK DlgProcAlarm(HWND hwndADlg, UINT uMsg, WPARAM wParam, LP
     {
         case WM_INITDIALOG:
             AlarmDlg = 1;
+            erreicht = 1;
             sprintf(hStr, "%02d:%02d:%02d   %s", EZ.wHour, EZ.wMinute, EZ.wSecond, alarmgrund);
             SetDlgItemText(hwndADlg, IDD_ALARM_TEXT, hStr);
             return TRUE;
@@ -1513,15 +1552,22 @@ static LRESULT CALLBACK DlgProcAlarm(HWND hwndADlg, UINT uMsg, WPARAM wParam, LP
                     AddTime(30);
                     break;
                 case IDD_EDIT:
-                    DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), NULL, (DLGPROC)
-                    DlgProcEdit);
+                    DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndADlg, (DLGPROC)DlgProcEdit);
                     break;
             }
+            AlarmDlg = 0;
+            EndDialog(hwndADlg, 0);
+            return TRUE;
+
+        case WM_RBUTTONDBLCLK:
+        case WM_RBUTTONUP:
+            DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndADlg, (DLGPROC)DlgProcEdit);
+            AlarmDlg = 0;
+            EndDialog(hwndADlg, 0);
+            return TRUE;
 
         case WM_LBUTTONDBLCLK:
-        case WM_RBUTTONDBLCLK:
         case WM_LBUTTONUP:
-        case WM_RBUTTONUP:
         case WM_CLOSE:
             AlarmDlg = 0;
             EndDialog(hwndADlg, 0);
