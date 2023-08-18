@@ -15,7 +15,7 @@
 // 1.0.1.07 Speichern und Wiederherstellen der Fensterposition  aN 10.04.2007
 // 1.0.1.08 Eine einfache Syntaxprüfung der Eingabe ergänzt     aN 10.04.2007
 // 1.0.1.09 Eine einfache Syntaxprüfung der Eingabe ergänzt     aN 10.04.2007
-// 1.0.1.10 Bei fscanf die Anzahl gelesener Parameter grprüft   aN 10.04.2007
+// 1.0.1.10 Bei fscanf die Anzahl gelesener Parameter geprüft   aN 10.04.2007
 // 1.0.1.11 Farbcodes für die Restzeit                          aN 11.04.2007
 // 1.0.1.12 Farben angepaßt und in SetColors gechoben           aN 11.04.2007
 // 1.0.1.13 Minimieren auf Klick-Rechts                         aN 16.04.2007
@@ -47,6 +47,7 @@
 // 2.0.0.41 Parameter S(panne) auswerten                        aN 07.08.2023
 // 2.0.0.42 Edit-Dialog überarbeitet                            aN 09.08.2023
 // 2.0.0.43 Restzeit-Berechnung neu                             aN 14.08.2023
+// 2.0.0.44 Farbrechnung und Farbe-Stundenzeiger neu            aN 18.08.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -74,10 +75,12 @@
 #define IMAGESIZE           40
 #define BIGICONSIZE         96
 #define BIGIMAGESIZE        96
-#define STUNDE_COLOR        RGB(0,0,191)
-#define MINUTE_COLOR        RGB(0,191,0)
-#define SEKUNDE_COLOR       RGB(0,0,0)
-#define WECKER_COLOR        RGB(255,0,0)
+#define STUNDE_COLOR_AM     RGB(  0,  0,255)
+#define STUNDE_COLOR_PM     RGB( 64, 64,191)
+#define MINUTE_COLOR        RGB(  0,191,  0)
+#define SEKUNDE_COLOR       RGB(  0,  0,  0)
+#define WECKER_COLOR_AM     RGB(255,  0,  0)
+#define WECKER_COLOR_PM     RGB(191, 64, 64)
 #define MASK_COLOR          RGB(255,255,255)
 #define GCL_HICON           (-14)
 
@@ -342,7 +345,7 @@ static HICON CreateTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, ICONSIZE, STUNDE_COLOR);
+    FillBitmap(mdc, hBitmap, 0, ICONSIZE, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
@@ -357,7 +360,7 @@ static HICON CreateTimeIcon(HWND hWnd)
     index %= 15;
     index = (((index * 10) / 2) + 5) / 10;
     ConvLinePoint(hx[index], hy[index], &pt[1], flag);
-    hPen = CreatePen(PS_SOLID, 3, STUNDE_COLOR);
+    hPen = CreatePen(PS_SOLID, 3, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
@@ -411,7 +414,7 @@ static HICON CreateTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, ICONSIZE, WECKER_COLOR);
+    FillBitmap(mdc, hBitmap, 0, ICONSIZE, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
@@ -425,7 +428,7 @@ static HICON CreateTimeIcon(HWND hWnd)
     index %= 15;
     index = (((index * 10) / 2) + 5) / 10;
     ConvLinePoint(hx[index], hy[index], &pt[1], flag);
-    hPen = CreatePen(PS_SOLID, 2, WECKER_COLOR);
+    hPen = CreatePen(PS_SOLID, 2, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
@@ -502,7 +505,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, STUNDE_COLOR);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
@@ -520,7 +523,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     //index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
 
-    hPen = CreatePen(PS_SOLID, 3, STUNDE_COLOR);
+    hPen = CreatePen(PS_SOLID, 3, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
@@ -575,7 +578,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, WECKER_COLOR);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
@@ -589,7 +592,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index %= 15;
     //index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
-    hPen = CreatePen(PS_SOLID, 4, WECKER_COLOR);
+    hPen = CreatePen(PS_SOLID, 4, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
@@ -754,7 +757,7 @@ void SetColors(HWND hwndCtl, HDC wParam)
     if (id == IDD_RESTZEIT)
     {
         delta = (RZ.wHour * 60 + RZ.wMinute);
-        abstand = (DZ.wHour * 60 + DZ.wMinute);
+        // abstand = (DZ.wHour * 60 + DZ.wMinute);
         if (0 == abstand)
             abstand = 60;  // Korrektur bei Abstand 0
 
@@ -762,13 +765,14 @@ void SetColors(HWND hwndCtl, HDC wParam)
         {
             // grün
             bg_r = (127 * (abstand - delta)) / abstand;
-            bg_g = ( 31 * (abstand - delta)) / abstand + 224;
+            bg_g = ( 15 * (abstand - delta)) / abstand + 112;
             bg_b = 0;
         }
         else
         {
             // rot
-            bg_r = ( 31 * (abstand - delta)) / abstand + 224;
+            // bg_r = ( 15 * (abstand - delta)) / abstand + 112;
+            bg_r = (127 * (          delta)) / abstand;
             bg_g = 0;
             bg_b = (127 * (abstand - delta)) / abstand;
         }
@@ -788,9 +792,9 @@ void SetColors(HWND hwndCtl, HDC wParam)
         }
         else
         {
-            tx_r = (128 + bg_r) % 256;
-            tx_g = (128 + bg_g) % 256;
-            tx_b = (128 + bg_b) % 256;
+            tx_r = 127 + bg_r % 128;
+            tx_g = 127 + bg_g % 128;
+            tx_b = 127 + bg_b % 128;
         }
 
         gForegroundColor = RGB(tx_r, tx_g, tx_b);
@@ -1072,7 +1076,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     switch (uMsg)
     {
         case WM_INITDIALOG:
-            // Timer starten    
+            // Timer starten
             SetTimer(hwndDlg, TIMER_UHR , 250, NULL);
             SetTimer(hwndDlg, TIMER_UHRA, 500, NULL);
 
@@ -1301,6 +1305,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 if (uhren[2].hide == 0)
                 {
                     static HICON hBTempIcon = NULL;
+                    static int xx = 0;
                     hBTempIcon = CreateBigTimeIcon(hwndDlg);
                     if (NULL != hBTempIcon)
                     {
@@ -1312,6 +1317,11 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                         //SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
                         SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBIcon, (LPARAM)0);
                         //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
+                    }
+                    if (xx < 5)
+                    {
+                        Refresh(hwndDlg);
+                        xx++;
                     }
                 }
                 return TRUE;
@@ -1485,7 +1495,7 @@ static LRESULT CALLBACK DlgProcEdit(HWND hwndEDlg, UINT uMsg, WPARAM wParam, LPA
                             break;
                     }
 
-                    
+
 
                     GetDlgItemText(hwndEDlg, IDD_EDIT_GRUND, alarmgrund, 99);
 
