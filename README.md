@@ -3,8 +3,8 @@
  erstellt mit **Pelles C**
 
 #### Parameter:
-* Z  ... Alarmzeit im Format H:M:S
-* S  ... Zeit bis Alarm in Minuten
+* Z  ... Alarm**z**eit im Format H:M:S
+* S  ... Zeit**s**panne bis Alarm in Minuten
 * "" ... Alarmgrund zwischen zwei "..."
 
 
