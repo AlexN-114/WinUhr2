@@ -7,15 +7,15 @@
 
 LANGUAGE LANG_GERMAN,SUBLANG_GERMAN_AUSTRIAN
 
-IDR_ICO_MAIN ICON "main.ico"
+IDR_ICO_MAIN ICON "mainp.ico"
 
 IDR_ICO_TRAY ICON "tray.ico"
 
 IDR_ICO_TRAY2 ICON "tray2.ico"
 
-IDR_ICO_TRAY3 ICON "tray3.ico"
+IDR_ICO_TRAY3 ICON "tray3p.ico"
 
-IDR_ICO_TRAY4 ICON "tray4d.ico"
+IDR_ICO_TRAY4 ICON "tray4p.ico"
 
 DLG_MAIN_X DIALOGEX DISCARDABLE 6, 18, 86, 32
 STYLE WS_CAPTION|WS_SYSMENU|WS_VISIBLE
@@ -69,8 +69,8 @@ FONT 8, "MS Sans Serif", 0, 0, 1
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 2,0,0,43
-PRODUCTVERSION 2,0,0,43
+FILEVERSION 2,0,0,45
+PRODUCTVERSION 2,0,0,45
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -84,12 +84,12 @@ FILESUBTYPE VFT2_UNKNOWN
       VALUE "Comments", "Eine kleine Windows-Uhr\0"
       VALUE "CompanyName", "//-\. //\//. Software\0"
       VALUE "FileDescription", "Anzeige der Uhrzeit (digital,analog,gemischt)\0"
-      VALUE "FileVersion", "2.0.0.43\0"
+      VALUE "FileVersion", "2.0.0.45\0"
       VALUE "InternalName", "WinUhr2\0"
       VALUE "LegalCopyright", "Alexander NEUMEISTER © 2007-2023\0"
       VALUE "OriginalFilename", "WinUhr2.exe\0"
       VALUE "ProductName", "WinUhr2\0"
-      VALUE "ProductVersion", "2.0.0.43\0"
+      VALUE "ProductVersion", "2.0.0.45\0"
     }
   }
   BLOCK "VarFileInfo"
@@ -98,14 +98,15 @@ FILESUBTYPE VFT2_UNKNOWN
   }
 }
 
-DLG_ALARM DIALOGEX DISCARDABLE 6, 18, 106, 38
+DLG_ALARM DIALOGEX DISCARDABLE 6, 18, 122, 38
 STYLE WS_POPUP|DS_SYSMODAL|DS_CONTEXTHELP|DS_SETFOREGROUND|DS_3DLOOK|DS_CENTER|WS_CAPTION|WS_VISIBLE
 CAPTION "Achtung!"
 FONT 12, "MS Sans Serif", 0, 0, 1
 {
-  CONTROL "Die Terminzeit wurde erreicht", IDD_ALARM_TEXT, "Static", SS_CENTER|SS_CENTERIMAGE|SS_SUNKEN|WS_BORDER|WS_GROUP, 1, 1, 104, 19
+  CONTROL "Die Terminzeit wurde erreicht", IDD_ALARM_TEXT, "Static", SS_CENTER|SS_CENTERIMAGE|SS_SUNKEN|WS_BORDER|WS_GROUP, 1, 1, 119, 19
   CONTROL "+ 5 Min", IDD_5MIN, "Button", WS_TABSTOP, 2, 24, 28, 12
-  CONTROL "+ 15 Min", IDD_15MIN, "Button", WS_TABSTOP, 38, 24, 28, 12
-  CONTROL "+ 30 Min", IDD_30MIN, "Button", WS_TABSTOP, 76, 24, 28, 12
+  CONTROL "+ 15 Min", IDD_15MIN, "Button", WS_TABSTOP, 32, 24, 28, 12
+  CONTROL "+ 30 Min", IDD_30MIN, "Button", WS_TABSTOP, 62, 24, 28, 12
+  CONTROL "+ 60 Min", IDD_60MIN, "Button", WS_TABSTOP, 92, 24, 28, 12
 }
 

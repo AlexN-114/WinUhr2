@@ -23,11 +23,12 @@
 #define IDD_RESTZEIT    4002
 #define IDD_ENDZEIT     4003
 #define IDI_ACLOCK      4004
-#define IDD_5MIN        4005
-#define IDD_15MIN       4006
-#define IDD_30MIN       4007
-#define IDD_EDIT        4008
-#define IDI_BCLOCK      4009
+#define IDD_EDIT        4005
+#define IDI_BCLOCK      4006
+#define IDD_5MIN        4007
+#define IDD_15MIN       4008
+#define IDD_30MIN       4009
+#define IDD_60MIN       4010
 
 #define IDM_EDIT        6001
 #define IDM_MINI        6002

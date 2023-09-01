@@ -47,6 +47,8 @@
 // 2.0.0.41 Parameter S(panne) auswerten                        aN 07.08.2023
 // 2.0.0.42 Edit-Dialog überarbeitet                            aN 09.08.2023
 // 2.0.0.43 Restzeit-Berechnung neu                             aN 14.08.2023
+// 2.0.0.44 Farbrechnung und Farbe-Stundenzeiger neu            aN 18.08.2023
+// 2.0.0.45 Refresh ohne RDW_ERASE und wieder zurück            aN 21.08.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -67,17 +69,20 @@
 /** #defines ***************************************************************/
 
 #define NELEMS(a)  (sizeof(a) / sizeof((a)[0]))
-#define Refresh(A) RedrawWindow(A,NULL,NULL,RDW_ERASE|RDW_INVALIDATE|/*RDW_ALLCHILDREN|*/RDW_UPDATENOW);
+#define Refresh(A) RedrawWindow(A,NULL,NULL,RDW_ERASE|RDW_INVALIDATE|RDW_ALLCHILDREN|RDW_UPDATENOW);
+#define RefreshX(A) RedrawWindow(A,NULL,NULL,RDW_INVALIDATE|RDW_ALLCHILDREN|RDW_UPDATENOW);
 
 #define BUF_SIZE            256
 #define ICONSIZE            40
 #define IMAGESIZE           40
 #define BIGICONSIZE         96
 #define BIGIMAGESIZE        96
-#define STUNDE_COLOR        RGB(0,0,191)
-#define MINUTE_COLOR        RGB(0,191,0)
-#define SEKUNDE_COLOR       RGB(0,0,0)
-#define WECKER_COLOR        RGB(255,0,0)
+#define STUNDE_COLOR_AM     RGB(  0,  0,255)
+#define STUNDE_COLOR_PM     RGB(  0,127,191)
+#define MINUTE_COLOR        RGB(  0,255,  0)
+#define SEKUNDE_COLOR       RGB(  0,  0,  0)
+#define WECKER_COLOR_AM     RGB(255,  0,  0)
+#define WECKER_COLOR_PM     RGB(191, 64,  0)
 #define MASK_COLOR          RGB(255,255,255)
 #define GCL_HICON           (-14)
 
@@ -342,7 +347,6 @@ static HICON CreateTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, ICONSIZE, STUNDE_COLOR);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
@@ -357,13 +361,13 @@ static HICON CreateTimeIcon(HWND hWnd)
     index %= 15;
     index = (((index * 10) / 2) + 5) / 10;
     ConvLinePoint(hx[index], hy[index], &pt[1], flag);
-    hPen = CreatePen(PS_SOLID, 3, STUNDE_COLOR);
+    hPen = CreatePen(PS_SOLID, 3, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
 
     /* Icon zusammen setzen */
-    IconList = ImageList_Create(ICONSIZE, ICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
+    IconList = ImageList_Create(ICONSIZE, ICONSIZE, ILC_COLOR8 | ILC_MASK, 4, 5);
     ImageList_AddIcon(IconList, hBackIcon);
 
     /* GDI  */
@@ -411,7 +415,7 @@ static HICON CreateTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, ICONSIZE, WECKER_COLOR);
+    FillBitmap(mdc, hBitmap, 0, ICONSIZE, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
@@ -425,7 +429,7 @@ static HICON CreateTimeIcon(HWND hWnd)
     index %= 15;
     index = (((index * 10) / 2) + 5) / 10;
     ConvLinePoint(hx[index], hy[index], &pt[1], flag);
-    hPen = CreatePen(PS_SOLID, 2, WECKER_COLOR);
+    hPen = CreatePen(PS_SOLID, 2, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
@@ -502,7 +506,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, STUNDE_COLOR);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
@@ -520,13 +524,13 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     //index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
 
-    hPen = CreatePen(PS_SOLID, 3, STUNDE_COLOR);
+    hPen = CreatePen(PS_SOLID, 3, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
 
     /* Icon zusammen setzen */
-    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
+    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR8 | ILC_MASK, 4, 5);
     ImageList_AddIcon(IconList, hBigIcon);
 
     /* GDI  */
@@ -575,7 +579,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
-    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, WECKER_COLOR);
+    FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
@@ -589,7 +593,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     index %= 15;
     //index = (((index * 10) / 2) + 5) / 10;
     ConvBigLinePoint(hx[index], hy[index], &pt[1], flag);
-    hPen = CreatePen(PS_SOLID, 4, WECKER_COLOR);
+    hPen = CreatePen(PS_SOLID, 4, (EZ.wHour>=12)?WECKER_COLOR_PM:WECKER_COLOR_AM);
     SelectObject(mdc, hPen);
     Polyline(mdc, pt, sizeof(pt) / sizeof(POINT));
     DeleteObject(hPen);
@@ -754,7 +758,7 @@ void SetColors(HWND hwndCtl, HDC wParam)
     if (id == IDD_RESTZEIT)
     {
         delta = (RZ.wHour * 60 + RZ.wMinute);
-        abstand = (DZ.wHour * 60 + DZ.wMinute);
+        // abstand = (DZ.wHour * 60 + DZ.wMinute);
         if (0 == abstand)
             abstand = 60;  // Korrektur bei Abstand 0
 
@@ -762,13 +766,14 @@ void SetColors(HWND hwndCtl, HDC wParam)
         {
             // grün
             bg_r = (127 * (abstand - delta)) / abstand;
-            bg_g = ( 31 * (abstand - delta)) / abstand + 224;
+            bg_g = ( 15 * (abstand - delta)) / abstand + 112;
             bg_b = 0;
         }
         else
         {
             // rot
-            bg_r = ( 31 * (abstand - delta)) / abstand + 224;
+            // bg_r = ( 15 * (abstand - delta)) / abstand + 112;
+            bg_r = (127 * (          delta)) / abstand;
             bg_g = 0;
             bg_b = (127 * (abstand - delta)) / abstand;
         }
@@ -788,16 +793,15 @@ void SetColors(HWND hwndCtl, HDC wParam)
         }
         else
         {
-            tx_r = (128 + bg_r) % 256;
-            tx_g = (128 + bg_g) % 256;
-            tx_b = (128 + bg_b) % 256;
+            tx_r = 127 + bg_r % 128;
+            tx_g = 127 + bg_g % 128;
+            tx_b = 127 + bg_b % 128;
         }
 
         gForegroundColor = RGB(tx_r, tx_g, tx_b);
         if (gBackgroundColor != old_back)
         {
             old_back = gBackgroundColor;
-            //Refresh(hMainWnd);
             SetTextColor(wParam, gBackgroundColor);
             SetBkColor(wParam, gForegroundColor);
             Refresh(uhren[0].hWnd);
@@ -1026,12 +1030,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
             DispatchMessage(&Msg);
         }
 #endif
-    }
-
-    if (uhren[0].hWnd == NULL && uhren[1].hWnd == NULL && uhren[2].hWnd == NULL)
-    {
-        SaveRect();
-        exit(0);
     }
 
     return TRUE;
@@ -1298,6 +1296,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             // Analoguhr
             if (TIMER_UHRA == wParam)
             {
+               static int xx = 0;
                 if (uhren[2].hide == 0)
                 {
                     static HICON hBTempIcon = NULL;
@@ -1313,6 +1312,12 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                         SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBIcon, (LPARAM)0);
                         //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
                     }
+                }
+                if(xx<3)
+                {
+                    //TODO
+                    Refresh(hwndDlg);
+                    xx++;
                 }
                 return TRUE;
             }
@@ -1375,7 +1380,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         case WM_CTLCOLORSTATIC:
             SetColors((HWND)lParam, (HDC) wParam);
             SendMessage(hwndDlg, WM_CTLCOLORDLG, wParam, lParam);
-            return (int)GetSysColorBrush(COLOR_3DFACE);
+            return (size_t)GetSysColorBrush(COLOR_3DFACE);
             break;
 
         case WM_CTLCOLORDLG:
@@ -1550,6 +1555,9 @@ static LRESULT CALLBACK DlgProcAlarm(HWND hwndADlg, UINT uMsg, WPARAM wParam, LP
                     break;
                 case IDD_30MIN:
                     AddTime(30);
+                    break;
+                case IDD_60MIN:
+                    AddTime(60);
                     break;
                 case IDD_EDIT:
                     DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndADlg, (DLGPROC)DlgProcEdit);
