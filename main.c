@@ -15,7 +15,7 @@
 // 1.0.1.07 Speichern und Wiederherstellen der Fensterposition  aN 10.04.2007
 // 1.0.1.08 Eine einfache Syntaxprüfung der Eingabe ergänzt     aN 10.04.2007
 // 1.0.1.09 Eine einfache Syntaxprüfung der Eingabe ergänzt     aN 10.04.2007
-// 1.0.1.10 Bei fscanf die Anzahl gelesener Parameter grprüft   aN 10.04.2007
+// 1.0.1.10 Bei fscanf die Anzahl gelesener Parameter geprüft   aN 10.04.2007
 // 1.0.1.11 Farbcodes für die Restzeit                          aN 11.04.2007
 // 1.0.1.12 Farben angepaßt und in SetColors gechoben           aN 11.04.2007
 // 1.0.1.13 Minimieren auf Klick-Rechts                         aN 16.04.2007
@@ -347,6 +347,7 @@ static HICON CreateTimeIcon(HWND hWnd)
 
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
+    FillBitmap(mdc, hBitmap, 0, ICONSIZE, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
 
     /* Bitmap für Maske erzeugen */
     hMaskBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
@@ -1300,6 +1301,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 if (uhren[2].hide == 0)
                 {
                     static HICON hBTempIcon = NULL;
+                    static int xx = 0;
                     hBTempIcon = CreateBigTimeIcon(hwndDlg);
                     if (NULL != hBTempIcon)
                     {
@@ -1312,6 +1314,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                         SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBIcon, (LPARAM)0);
                         //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
                     }
+                    if (xx < 5)
+                    {
+                        Refresh(hwndDlg);
+                        xx++;
                 }
                 if(xx<3)
                 {
