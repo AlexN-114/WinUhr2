@@ -49,6 +49,7 @@
 // 2.0.0.43 Restzeit-Berechnung neu                             aN 14.08.2023
 // 2.0.0.44 Farbrechnung und Farbe-Stundenzeiger neu            aN 18.08.2023
 // 2.0.0.45 Refresh ohne RDW_ERASE und wieder zurück            aN 21.08.2023
+// 2.0.0.46 Systemicon setzen mit WM_SETICON (64Bit-tauglich)   aN 05.09.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -1117,11 +1118,11 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             {
                 nid.cbSize = sizeof(NOTIFYICONDATA);  //Most API Structs require this
                 nid.hWnd = hwndDlg;
-                nid.uID = IDR_ICO_TRAY3;
+                nid.uID = IDR_ICO_MAIN;
                 nid.uFlags = NIF_ICON + NIF_MESSAGE + NIF_TIP;  //Flags to set requires fields
                 nid.uCallbackMessage = WM_SHELLNOTIFY;  // Message ID sent when the pointer enters Tray icon area
                 nid.hIcon = LoadIcon(ghInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));  //Load Icon for tray
-                lstrcpy(nid.szTip, "myWinUhr2");  //Tray Icon Tool Tip
+                lstrcpy(nid.szTip, "WinUhr2");  //Tray Icon Tool Tip
                 Shell_NotifyIcon(NIM_ADD, &nid);  //Show the Icon
             }
 
@@ -1301,7 +1302,6 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 if (uhren[2].hide == 0)
                 {
                     static HICON hBTempIcon = NULL;
-                    static int xx = 0;
                     hBTempIcon = CreateBigTimeIcon(hwndDlg);
                     if (NULL != hBTempIcon)
                     {
@@ -1313,11 +1313,6 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                         //SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hBTempIcon, (LPARAM)0);
                         SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBIcon, (LPARAM)0);
                         //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
-                    }
-                    if (xx < 5)
-                    {
-                        Refresh(hwndDlg);
-                        xx++;
                     }
                 }
                 if(xx<3)
@@ -1336,6 +1331,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     Jetzt.wHour, Jetzt.wMinute, Jetzt.wSecond,
                     RZ.wHour, RZ.wMinute, RZ.wSecond,
                     EZ.wHour, EZ.wMinute, EZ.wSecond);
+            nid.hIcon = hIcon;
 
             // Icons setzen
 
@@ -1352,11 +1348,17 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 SendDlgItemMessage(uhren[0].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SendDlgItemMessage(uhren[0].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[0].hWnd, GCL_HICON, (size_t)hIcon);
+                //SetClassLong(uhren[0].hWnd, GCL_HICON, (size_t)hIcon);
                 SendDlgItemMessage(uhren[1].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 //SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[1].hWnd, GCL_HICON, (size_t)hIcon);
+                //SetClassLong(uhren[1].hWnd, GCL_HICON, (size_t)hIcon);
                 SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
+                SendMessage(uhren[0].hWnd,WM_SETICON, ICON_SMALL,(LPARAM)hIcon);
+                SendMessage(uhren[0].hWnd,WM_SETICON, ICON_BIG  ,(LPARAM)hIcon);
+                SendMessage(uhren[1].hWnd,WM_SETICON, ICON_SMALL,(LPARAM)hIcon);
+                SendMessage(uhren[1].hWnd,WM_SETICON, ICON_BIG  ,(LPARAM)hIcon);
+                SendMessage(uhren[2].hWnd,WM_SETICON, ICON_SMALL,(LPARAM)hIcon);
+                SendMessage(uhren[2].hWnd,WM_SETICON, ICON_BIG  ,(LPARAM)hIcon);
             }
 
             // Tray aktuallisieren
