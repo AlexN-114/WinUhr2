@@ -79,7 +79,7 @@
 #define BIGIMAGESIZE        96
 #define STUNDE_COLOR_AM     RGB(  0,  0,255)
 #define STUNDE_COLOR_PM     RGB(  0,127,191)
-#define MINUTE_COLOR        RGB(  0,255,  0)
+#define MINUTE_COLOR        RGB(  0,223,  0)
 #define SEKUNDE_COLOR       RGB(  0,  0,  0)
 #define WECKER_COLOR_AM     RGB(255,  0,  0)
 #define WECKER_COLOR_PM     RGB(191, 64,  0)
@@ -1318,6 +1318,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     {
                         Refresh(hwndDlg);
                         xx++;
+                    }
                 }
                 if(xx<3)
                 {
