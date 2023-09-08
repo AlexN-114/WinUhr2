@@ -48,6 +48,8 @@
 // 2.0.0.42 Edit-Dialog überarbeitet                            aN 09.08.2023
 // 2.0.0.43 Restzeit-Berechnung neu                             aN 14.08.2023
 // 2.0.0.44 Farbrechnung und Farbe-Stundenzeiger neu            aN 18.08.2023
+// 2.0.0.45 Refresh ohne RDW_ERASE und wieder zurück            aN 21.08.2023
+// 2.0.0.46 Systemicon setzen mit WM_SETICON (64Bit-tauglich)   aN 05.09.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
@@ -68,7 +70,8 @@
 /** #defines ***************************************************************/
 
 #define NELEMS(a)  (sizeof(a) / sizeof((a)[0]))
-#define Refresh(A) RedrawWindow(A,NULL,NULL,RDW_ERASE|RDW_INVALIDATE|/*RDW_ALLCHILDREN|*/RDW_UPDATENOW);
+#define Refresh(A) RedrawWindow(A,NULL,NULL,RDW_ERASE|RDW_INVALIDATE|RDW_ALLCHILDREN|RDW_UPDATENOW);
+#define RefreshX(A) RedrawWindow(A,NULL,NULL,RDW_INVALIDATE|RDW_ALLCHILDREN|RDW_UPDATENOW);
 
 #define BUF_SIZE            256
 #define ICONSIZE            40
@@ -76,11 +79,11 @@
 #define BIGICONSIZE         96
 #define BIGIMAGESIZE        96
 #define STUNDE_COLOR_AM     RGB(  0,  0,255)
-#define STUNDE_COLOR_PM     RGB( 64, 64,191)
-#define MINUTE_COLOR        RGB(  0,191,  0)
+#define STUNDE_COLOR_PM     RGB(  0,127,191)
+#define MINUTE_COLOR        RGB(  0,223,  0)
 #define SEKUNDE_COLOR       RGB(  0,  0,  0)
 #define WECKER_COLOR_AM     RGB(255,  0,  0)
-#define WECKER_COLOR_PM     RGB(191, 64, 64)
+#define WECKER_COLOR_PM     RGB(191, 64,  0)
 #define MASK_COLOR          RGB(255,255,255)
 #define GCL_HICON           (-14)
 
@@ -366,7 +369,7 @@ static HICON CreateTimeIcon(HWND hWnd)
     DeleteObject(hPen);
 
     /* Icon zusammen setzen */
-    IconList = ImageList_Create(ICONSIZE, ICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
+    IconList = ImageList_Create(ICONSIZE, ICONSIZE, ILC_COLOR8 | ILC_MASK, 4, 5);
     ImageList_AddIcon(IconList, hBackIcon);
 
     /* GDI  */
@@ -529,7 +532,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     DeleteObject(hPen);
 
     /* Icon zusammen setzen */
-    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR | ILC_MASK, 4, 5);
+    IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR8 | ILC_MASK, 4, 5);
     ImageList_AddIcon(IconList, hBigIcon);
 
     /* GDI  */
@@ -801,7 +804,6 @@ void SetColors(HWND hwndCtl, HDC wParam)
         if (gBackgroundColor != old_back)
         {
             old_back = gBackgroundColor;
-            //Refresh(hMainWnd);
             SetTextColor(wParam, gBackgroundColor);
             SetBkColor(wParam, gForegroundColor);
             Refresh(uhren[0].hWnd);
@@ -1032,12 +1034,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 #endif
     }
 
-    if (uhren[0].hWnd == NULL && uhren[1].hWnd == NULL && uhren[2].hWnd == NULL)
-    {
-        SaveRect();
-        exit(0);
-    }
-
     return TRUE;
 }
 
@@ -1076,7 +1072,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     switch (uMsg)
     {
         case WM_INITDIALOG:
-            // Timer starten
+            // Timer starten    
             SetTimer(hwndDlg, TIMER_UHR , 250, NULL);
             SetTimer(hwndDlg, TIMER_UHRA, 500, NULL);
 
@@ -1122,11 +1118,11 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             {
                 nid.cbSize = sizeof(NOTIFYICONDATA);  //Most API Structs require this
                 nid.hWnd = hwndDlg;
-                nid.uID = IDR_ICO_TRAY3;
+                nid.uID = IDR_ICO_MAIN;
                 nid.uFlags = NIF_ICON + NIF_MESSAGE + NIF_TIP;  //Flags to set requires fields
                 nid.uCallbackMessage = WM_SHELLNOTIFY;  // Message ID sent when the pointer enters Tray icon area
                 nid.hIcon = LoadIcon(ghInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));  //Load Icon for tray
-                lstrcpy(nid.szTip, "myWinUhr2");  //Tray Icon Tool Tip
+                lstrcpy(nid.szTip, "WinUhr2");  //Tray Icon Tool Tip
                 Shell_NotifyIcon(NIM_ADD, &nid);  //Show the Icon
             }
 
@@ -1302,10 +1298,10 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             // Analoguhr
             if (TIMER_UHRA == wParam)
             {
+               static int xx = 0;
                 if (uhren[2].hide == 0)
                 {
                     static HICON hBTempIcon = NULL;
-                    static int xx = 0;
                     hBTempIcon = CreateBigTimeIcon(hwndDlg);
                     if (NULL != hBTempIcon)
                     {
@@ -1318,11 +1314,12 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                         SendDlgItemMessage(uhren[2].hWnd, IDI_BCLOCK, STM_SETICON, (WPARAM)hBIcon, (LPARAM)0);
                         //SetClassLong(uhren[2].hWnd, GCL_HICON, (LONG)hBTempIcon);
                     }
-                    if (xx < 5)
-                    {
-                        Refresh(hwndDlg);
-                        xx++;
-                    }
+                }
+                if(xx<3)
+                {
+                    //TODO
+                    Refresh(hwndDlg);
+                    xx++;
                 }
                 return TRUE;
             }
@@ -1334,6 +1331,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     Jetzt.wHour, Jetzt.wMinute, Jetzt.wSecond,
                     RZ.wHour, RZ.wMinute, RZ.wSecond,
                     EZ.wHour, EZ.wMinute, EZ.wSecond);
+            nid.hIcon = hIcon;
 
             // Icons setzen
 
@@ -1350,11 +1348,17 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 SendDlgItemMessage(uhren[0].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 SendDlgItemMessage(uhren[0].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[0].hWnd, GCL_HICON, (size_t)hIcon);
+                //SetClassLong(uhren[0].hWnd, GCL_HICON, (size_t)hIcon);
                 SendDlgItemMessage(uhren[1].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
                 //SendDlgItemMessage(uhren[1].hWnd, IDI_ACLOCK, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
-                SetClassLong(uhren[1].hWnd, GCL_HICON, (size_t)hIcon);
+                //SetClassLong(uhren[1].hWnd, GCL_HICON, (size_t)hIcon);
                 SendDlgItemMessage(uhren[2].hWnd, IDR_ICO_MAIN, STM_SETICON, (WPARAM)hIcon, (LPARAM)0);
+                SendMessage(uhren[0].hWnd,WM_SETICON, ICON_SMALL,(LPARAM)hIcon);
+                SendMessage(uhren[0].hWnd,WM_SETICON, ICON_BIG  ,(LPARAM)hIcon);
+                SendMessage(uhren[1].hWnd,WM_SETICON, ICON_SMALL,(LPARAM)hIcon);
+                SendMessage(uhren[1].hWnd,WM_SETICON, ICON_BIG  ,(LPARAM)hIcon);
+                SendMessage(uhren[2].hWnd,WM_SETICON, ICON_SMALL,(LPARAM)hIcon);
+                SendMessage(uhren[2].hWnd,WM_SETICON, ICON_BIG  ,(LPARAM)hIcon);
             }
 
             // Tray aktuallisieren
@@ -1385,7 +1389,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         case WM_CTLCOLORSTATIC:
             SetColors((HWND)lParam, (HDC) wParam);
             SendMessage(hwndDlg, WM_CTLCOLORDLG, wParam, lParam);
-            return (int)GetSysColorBrush(COLOR_3DFACE);
+            return (size_t)GetSysColorBrush(COLOR_3DFACE);
             break;
 
         case WM_CTLCOLORDLG:
@@ -1495,7 +1499,7 @@ static LRESULT CALLBACK DlgProcEdit(HWND hwndEDlg, UINT uMsg, WPARAM wParam, LPA
                             break;
                     }
 
-
+                    
 
                     GetDlgItemText(hwndEDlg, IDD_EDIT_GRUND, alarmgrund, 99);
 
@@ -1560,6 +1564,9 @@ static LRESULT CALLBACK DlgProcAlarm(HWND hwndADlg, UINT uMsg, WPARAM wParam, LP
                     break;
                 case IDD_30MIN:
                     AddTime(30);
+                    break;
+                case IDD_60MIN:
+                    AddTime(60);
                     break;
                 case IDD_EDIT:
                     DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndADlg, (DLGPROC)DlgProcEdit);

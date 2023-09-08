@@ -70,11 +70,11 @@ output\main.obj: \
 output\main.res: \
 	main.rc \
 	main.h \
-	main.ico \
+	mainp.ico \
 	tray.ico \
 	tray2.ico \
-	tray3.ico \
-	tray4.ico
+	tray3p.ico \
+	tray4p.ico
 	$(RC) $(RCFLAGS) "$!" -Fo"$@"
 
 .EXCLUDEDFILES:
