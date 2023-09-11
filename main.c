@@ -50,6 +50,7 @@
 // 2.0.0.44 Farbrechnung und Farbe-Stundenzeiger neu            aN 18.08.2023
 // 2.0.0.45 Refresh ohne RDW_ERASE und wieder zurück            aN 21.08.2023
 // 2.0.0.46 Systemicon setzen mit WM_SETICON (64Bit-tauglich)   aN 05.09.2023
+// 2.0.0.47 Vorläufige Endversion                               aN 11.09.2023
 
 /*
  * Either define WIN32_LEAN_AND_MEAN, or one or more of NOCRYPT,
