@@ -1119,7 +1119,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             {
                 nid.cbSize = sizeof(NOTIFYICONDATA);  //Most API Structs require this
                 nid.hWnd = hwndDlg;
-                nid.uID = IDR_ICO_MAIN;
+                nid.uID = IDR_ICO_TRAY3;
                 nid.uFlags = NIF_ICON + NIF_MESSAGE + NIF_TIP;  //Flags to set requires fields
                 nid.uCallbackMessage = WM_SHELLNOTIFY;  // Message ID sent when the pointer enters Tray icon area
                 nid.hIcon = LoadIcon(ghInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));  //Load Icon for tray
