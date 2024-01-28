@@ -65,8 +65,8 @@ FONT 8, "MS Sans Serif", 0, 0, 1
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 2,0,0,47
-PRODUCTVERSION 2,0,0,47
+FILEVERSION 2,0,0,48
+PRODUCTVERSION 2,0,0,48
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -80,12 +80,12 @@ FILESUBTYPE VFT2_UNKNOWN
       VALUE "Comments", "Eine kleine Windows-Uhr\0"
       VALUE "CompanyName", "/-\\. /\\/. - Software\0"
       VALUE "FileDescription", "Anzeige der Uhrzeit (digital,analog,gemischt)\0"
-      VALUE "FileVersion", "2.0.0.47\0"
+      VALUE "FileVersion", "2.0.0.48\0"
       VALUE "InternalName", "WinUhr2\0"
       VALUE "LegalCopyright", "Alexander NEUMEISTER © 2007-2024\0"
       VALUE "OriginalFilename", "WinUhr2.exe\0"
       VALUE "ProductName", "WinUhr2\0"
-      VALUE "ProductVersion", "2.0.0.47\0"
+      VALUE "ProductVersion", "2.0.0.48\0"
     }
   }
   BLOCK "VarFileInfo"
