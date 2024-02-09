@@ -7,7 +7,7 @@ POC_PROJECT_VERSION = 9.00#
 POC_PROJECT_TYPE = 0#
 POC_PROJECT_MODE = Release#
 POC_PROJECT_RESULTDIR = .#
-POC_PROJECT_OUTPUTDIR = output#
+POC_PROJECT_OUTPUTDIR = output32#
 !if "$(POC_PROJECT_MODE)" == "Release"
 POC_PROJECT_ARGUMENTS = #
 POC_PROJECT_WORKPATH = .#
@@ -52,14 +52,14 @@ LIB = $(PellesCDir)\Lib\Win;$(PellesCDir)\Lib#
 # Erzeuge WinUhr2-32.exe.
 # 
 WinUhr2-32.exe: \
-	output\main.obj \
-	output\main.res
+	output32\main.obj \
+	output32\main.res
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 
 # Erzeuge main.obj.
 # 
-output\main.obj: \
+output32\main.obj: \
 	main.c \
 	main.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
@@ -67,12 +67,10 @@ output\main.obj: \
 # 
 # Erzeuge main.res.
 # 
-output\main.res: \
+output32\main.res: \
 	main.rc \
 	main.h \
 	mainp.ico \
-	tray.ico \
-	tray2.ico \
 	tray3p.ico \
 	tray4p.ico
 	$(RC) $(RCFLAGS) "$!" -Fo"$@"
