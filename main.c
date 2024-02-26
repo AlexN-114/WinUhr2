@@ -53,7 +53,7 @@
 // 2.0.0.47 Vorläufige Endversion                               aN 11.09.2023
 // 2.0.0.48 Reihenfolge der Zeiger der gr. Uhr ändern           aN 28.01.2024
 // 2.0.0.49 Hide und Top merken                                 aN 09.02.2024
-// 2.0.0.50 Tray-Icon-Menü repariert, Restorezeigt 3 Dialog     aN 26.02.2024
+// 2.0.0.50 Tray-Icon-Menü rep., Restore zeigt alle 3 Dialoge   aN 26.02.2024
 
 
 /*
@@ -351,6 +351,7 @@ static HICON CreateTimeIcon(HWND hWnd)
     hdc = GetDC(hWnd);
     mdc = CreateCompatibleDC(hdc);
 
+    /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, ICONSIZE, ICONSIZE);
     FillBitmap(mdc, hBitmap, 0, ICONSIZE, (systim.wHour>=12)?STUNDE_COLOR_PM:STUNDE_COLOR_AM);
 
@@ -537,9 +538,11 @@ static HICON CreateBigTimeIcon(HWND hWnd)
     IconList = ImageList_Create(BIGICONSIZE, BIGICONSIZE, ILC_COLOR8 | ILC_MASK, 4, 5);
     ImageList_AddIcon(IconList, hBigIcon);
 
+    /* GDI  */
     SelectObject(mdc, hRetBmp);
     DeleteDC(mdc);
 
+    /* Zeit Icon zusammen setzen */
     ImageList_Add(IconList, hBitmap, hMaskBitmap);
     DeleteObject(hBitmap);
     DeleteObject(hMaskBitmap);
@@ -588,6 +591,7 @@ static HICON CreateBigTimeIcon(HWND hWnd)
 
     hdc = GetDC(hWnd);
     mdc = CreateCompatibleDC(hdc);
+
     /* Bitmap für Vordergrund erzeugen */
     hBitmap = CreateCompatibleBitmap(hdc, BIGICONSIZE, BIGICONSIZE);
     FillBitmap(mdc, hBitmap, 0, BIGICONSIZE, MINUTE_COLOR);
@@ -1406,6 +1410,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
         case WM_LBUTTONDBLCLK:
             DialogBox(ghInstance, MAKEINTRESOURCE(DLG_EDIT), hwndDlg, (DLGPROC)DlgProcEdit);
+            return TRUE;
             break;
 
         case WM_RBUTTONUP:
