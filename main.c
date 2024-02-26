@@ -1173,6 +1173,12 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 case IDM_RESTORE:
                     //minimized = 0;
+                    uhren[0].hide = 0;
+                    uhren[1].hide = 0;
+                    uhren[2].hide = 0;
+                    CheckMenuItem(hPopupMenu, IDM_HIDEX, MF_UNCHECKED);
+                    CheckMenuItem(hPopupMenu, IDM_HIDEY, MF_UNCHECKED);
+                    CheckMenuItem(hPopupMenu, IDM_HIDEZ, MF_UNCHECKED);
                     ShowWindow(uhren[0].hWnd, SW_RESTORE);
                     ShowWindow(uhren[1].hWnd, SW_RESTORE);
                     ShowWindow(uhren[2].hWnd, SW_RESTORE);
