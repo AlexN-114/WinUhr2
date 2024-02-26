@@ -16,7 +16,7 @@ IDR_ICO_TRAY4 ICON "tray4p.ico"
 DLG_MAIN_X DIALOGEX DISCARDABLE 6, 18, 86, 32
 STYLE WS_CAPTION|WS_SYSMENU|WS_VISIBLE
 CAPTION "WinUhr2"
-CLASS "WinUhrClass"
+CLASS "WinUhr2Class"
 FONT 10, "Verdana", 2, 0, 1
 {
   CONTROL "00:00:00", IDD_UHRZEIT, "Static", SS_RIGHT|WS_GROUP, 26, 2, 30, 8, WS_EX_RIGHT
@@ -31,7 +31,7 @@ FONT 10, "Verdana", 2, 0, 1
 DLG_MAIN_Y DIALOGEX DISCARDABLE 6, 18, 62, 32
 STYLE WS_CAPTION|WS_SYSMENU|WS_VISIBLE
 CAPTION "WinUhr2"
-CLASS "WinUhrClass"
+CLASS "WinUhr2Class"
 FONT 12, "Verdana", 2, 0, 1
 {
   CONTROL "00:00:00", IDD_UHRZEIT, "Static", SS_RIGHT|WS_GROUP, 26, 2, 30, 8, WS_EX_RIGHT
@@ -45,7 +45,7 @@ FONT 12, "Verdana", 2, 0, 1
 DLG_MAIN_Z DIALOGEX DISCARDABLE 6, 18, 72, 72
 STYLE WS_CAPTION|WS_SYSMENU|WS_VISIBLE
 CAPTION "WinUhr2"
-CLASS "WinUhrClass"
+CLASS "WinUhr2Class"
 FONT 10, "Verdana", 2, 0, 1
 {
   CONTROL "", IDI_BCLOCK, "Static", SS_ICON|SS_CENTERIMAGE|SS_REALSIZEIMAGE|WS_BORDER, 4, 4, 64, 64, WS_EX_TRANSPARENT
@@ -65,8 +65,8 @@ FONT 8, "MS Sans Serif", 0, 0, 1
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 2,0,0,49
-PRODUCTVERSION 2,0,0,49
+FILEVERSION 2,0,0,50
+PRODUCTVERSION 2,0,0,50
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -80,12 +80,12 @@ FILESUBTYPE VFT2_UNKNOWN
       VALUE "Comments", "Eine kleine Windows-Uhr\0"
       VALUE "CompanyName", "/-\. /\/. - Software\0"
       VALUE "FileDescription", "Anzeige der Uhrzeit (digital,analog,gemischt)\0"
-      VALUE "FileVersion", "2.0.0.49\0"
+      VALUE "FileVersion", "2.0.0.50\0"
       VALUE "InternalName", "WinUhr2\0"
       VALUE "LegalCopyright", "Alexander NEUMEISTER © 2007-2024\0"
       VALUE "OriginalFilename", "WinUhr2.exe\0"
       VALUE "ProductName", "WinUhr2\0"
-      VALUE "ProductVersion", "2.0.0.49\0"
+      VALUE "ProductVersion", "2.0.0.50\0"
     }
   }
   BLOCK "VarFileInfo"

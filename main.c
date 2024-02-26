@@ -53,6 +53,7 @@
 // 2.0.0.47 Vorläufige Endversion                               aN 11.09.2023
 // 2.0.0.48 Reihenfolge der Zeiger der gr. Uhr ändern           aN 28.01.2024
 // 2.0.0.49 Hide und Top merken                                 aN 09.02.2024
+// 2.0.0.50 Tray-Icon-Menü repariert, Restorezeigt 3 Dialog     aN 26.02.2024
 
 
 /*
@@ -991,7 +992,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
         /* Add our own stuff */
     wcx.hInstance = hInstance;
     wcx.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));
-    wcx.lpszClassName = _T("WinUhrClass");
+    wcx.lpszClassName = _T("WinUhr2Class");
 
     // Tray-Icons laden
     hBackIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICO_TRAY3), IMAGE_ICON, ICONSIZE, ICONSIZE, 0);
@@ -1006,9 +1007,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     uhren[0].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_X), NULL, (DLGPROC)DlgProcMain);
     uhren[1].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_Y), NULL, (DLGPROC)DlgProcMain);
     uhren[2].hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(DLG_MAIN_Z), NULL, (DLGPROC)DlgProcMain);
-	Refresh(uhren[0].hWnd);
-	Refresh(uhren[1].hWnd);
-	Refresh(uhren[2].hWnd);
+    Refresh(uhren[0].hWnd);
+    Refresh(uhren[1].hWnd);
+    Refresh(uhren[2].hWnd);
     //DialogBox(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)DlgProcMain);
 
     while (GetMessage(&Msg, NULL, 0, 0) > 0)
@@ -1088,13 +1089,13 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 AppendMenu(hPopupMenu, MF_STRING | MF_CHECKED, IDM_RESTZEIT, "&Restzeit bei Minimiert");
                 AppendMenu(hPopupMenu, MF_SEPARATOR, 0, 0);
                 //AppendMenu(hPopupMenu, MF_STRING            ,IDM_MINI       , "&Minimieren");
-                AppendMenu(hPopupMenu, MF_STRING, IDM_HIDEX, "&Verstecken X");
-                AppendMenu(hPopupMenu, MF_STRING, IDM_HIDEY, "&Verstecken Y");
-                AppendMenu(hPopupMenu, MF_STRING, IDM_HIDEZ, "&Verstecken Z");
+                AppendMenu(hPopupMenu, MF_STRING, IDM_HIDEX, "&Verstecken B");
+                AppendMenu(hPopupMenu, MF_STRING, IDM_HIDEY, "&Verstecken D");
+                AppendMenu(hPopupMenu, MF_STRING, IDM_HIDEZ, "&Verstecken A");
                 AppendMenu(hPopupMenu, MF_SEPARATOR, 0, 0);
-                AppendMenu(hPopupMenu, MF_STRING, IDM_TOPX, "&TopMost X");
-                AppendMenu(hPopupMenu, MF_STRING, IDM_TOPY, "&TopMost Y");
-                AppendMenu(hPopupMenu, MF_STRING, IDM_TOPZ, "&TopMost Z");
+                AppendMenu(hPopupMenu, MF_STRING, IDM_TOPX, "&TopMost B");
+                AppendMenu(hPopupMenu, MF_STRING, IDM_TOPY, "&TopMost D");
+                AppendMenu(hPopupMenu, MF_STRING, IDM_TOPZ, "&TopMost A");
                 AppendMenu(hPopupMenu, MF_SEPARATOR, 0, 0);
                 AppendMenu(hPopupMenu, MF_STRING, IDM_RESTORE, "&Wiederherstellen");
                 AppendMenu(hPopupMenu, MF_SEPARATOR, 0, 0);
@@ -1122,7 +1123,7 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             {
                 nid.cbSize = sizeof(NOTIFYICONDATA);  //Most API Structs require this
                 nid.hWnd = hwndDlg;
-                nid.uID = IDR_ICO_MAIN;
+                nid.uID = IDR_ICO_TRAY3;
                 nid.uFlags = NIF_ICON + NIF_MESSAGE + NIF_TIP;  //Flags to set requires fields
                 nid.uCallbackMessage = WM_SHELLNOTIFY;  // Message ID sent when the pointer enters Tray icon area
                 nid.hIcon = LoadIcon(ghInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));  //Load Icon for tray
@@ -1168,7 +1169,9 @@ static LRESULT CALLBACK DlgProcMain(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 case IDM_RESTORE:
                     //minimized = 0;
-                    ShowWindow(hwndDlg, SW_RESTORE);
+                    ShowWindow(uhren[0].hWnd, SW_RESTORE);
+                    ShowWindow(uhren[1].hWnd, SW_RESTORE);
+                    ShowWindow(uhren[2].hWnd, SW_RESTORE);
                     break;
 
                 case IDM_RESTZEIT:
